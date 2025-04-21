@@ -160,15 +160,18 @@ namespace command
 
       if (filtered_command.at("prefix") == "kiss")
       {
-        bot.direct_message_create(user, dpp::message("i love u mwah"), [channel_id = event.msg.channel_id, &bot](const dpp::confirmation_callback_t& callback)
+        bot.direct_message_create(user, dpp::message(
+          "✨ 💫 💗 🧚‍♀️ 💖 HEEEEY !! 💖 ✨ 🌸 💞\n"
+          "... 🫦 mwah 💋 💖 🌟 ✨ 🫃 🫃 🫃\n"
+        ), [channel_id = event.msg.channel_id, &bot](const dpp::confirmation_callback_t& callback)
         {
           if (callback.is_error())
           {
-            bot.message_create(dpp::message(channel_id, "sorry but i can't message this person :("));
+            bot.message_create(dpp::message(channel_id, "😢 💔 sorry bb i can't message this person 😢"));
           }
           else
           {
-            bot.message_create(dpp::message(channel_id, "kissed :3"));
+            bot.message_create(dpp::message(channel_id, "💋 kissed!!! 💖 🫃"));
           }
         });
         // Empty message to short-circuit registered_command
