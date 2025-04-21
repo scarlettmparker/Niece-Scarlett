@@ -101,6 +101,89 @@ namespace command
     send_page(current_page);
   }
 
+  void send_language_transfer_embed(const dpp::message_create_t& event)
+  {
+    dpp::embed embed;
+    embed.set_title("**What is Language Transfer?**");
+    embed.set_description(
+      "Language Transfer is an audio series that teaches the basics of Modern Greek in a natural and easy-to-comprehend manner. "
+      "It focuses on grammar and teaches useful vocabulary to prepare you for everyday conversations.\n\n"
+      "It's highly encouraged to check it out, as it will help you build a very solid foundation to communicate in Greek.\n\n"
+      "**The complete series can be found on:**\n"
+      "- [YouTube](https://www.youtube.com/watch?v=dHsgJkV9J30&list=PLeA5t3dWTWvtWkl4oOV8J9SMB7L9N9Ogt)\n"
+      "- [SoundCloud](https://soundcloud.com/languagetransfer/sets/complete-greek-more-audios)\n"
+      "- [Transcript (PDF)](https://static1.squarespace.com/static/5c69bfa4f4e531370e74fa44/t/5d03d32873f6f10001a364b5/1560531782855/COMPLETE+GREEK+-+Transcripts_LT.pdf)\n\n"
+      "The audio series follows the teacher (Mihalis) as he teaches a student useful grammatical constructions and how to form sentences naturally, "
+      "allowing you to follow along by putting yourself in the student’s shoes.\n\n"
+      "More useful resources can be found in [the resources channel](https://discord.com/channels/350234668680871946/359578025228107776/1132288734738522112), "
+      "notably in the pins, to help you advance your Greek level after Language Transfer.\n\n"
+    );
+
+    dpp::message msg(event.msg.channel_id, "");
+    msg.add_embed(embed);
+    event.from->creator->message_create(msg);
+  }
+
+  /**
+   *
+   */
+  void handle_annotation_command(dpp::cluster& bot, const std::string& command, const dpp::message_create_t& event, const std::string& annotation_command)
+  {
+    size_t start = annotation_command.length();
+    while (start < command.length() && command[start] == ' ') ++start;
+
+    std::string number_str;
+    while (start < command.length() && std::isdigit(command[start]))
+      number_str += command[start++];
+
+    if (number_str.empty())
+    {
+      bot.message_create(dpp::message(event.msg.channel_id, "bro enter a nubmer"));
+      return;
+    }
+
+    bot.message_create(dpp::message(
+      event.msg.channel_id, "bleep bloop :robot: finding annotations for text with id " + number_str
+    ));
+
+    nlohmann::json annotations_data = select_annotations_data(number_str, true);
+    send_annotation_message(event, annotations_data);
+  }
+
+  /**
+   */
+  dpp::message handle_love_command(dpp::cluster& bot, const std::map<std::string, std::string>& filtered_command, const std::string& command, const dpp::message_create_t& event)
+  {
+    if (filtered_command.count("tagged"))
+    {
+      dpp::snowflake user = std::stoull(filtered_command.at("tagged").substr(2, filtered_command.at("tagged").size() - 3));
+
+      if (filtered_command.at("prefix") == "kiss")
+      {
+        bot.direct_message_create(user, dpp::message("i love u mwah"), [channel_id = event.msg.channel_id, &bot](const dpp::confirmation_callback_t& callback)
+        {
+          if (callback.is_error())
+          {
+            bot.message_create(dpp::message(channel_id, "sorry but i can't message this person :("));
+          }
+          else
+          {
+            bot.message_create(dpp::message(channel_id, "kissed :3"));
+          }
+        });
+        // Empty message to short-circuit registered_command
+        return dpp::message(event.msg.channel_id, "<handled>");
+      }
+    }
+
+    if (command == "i love you")
+    {
+      return dpp::message(event.msg.channel_id, "i love u too mwah");
+    }
+
+    // No matching love command found
+    return dpp::message(event.msg.channel_id, "<handled>");
+  }
 
   /**
    * Filter a bot command. This will separate the @ of the user from the command
@@ -161,70 +244,54 @@ namespace command
   {
     std::string unknown_command = "i don't know this command :(";
 
-    if (command.length() == 0)
+    if (command.empty())
     {
       return dpp::message(event.msg.channel_id, unknown_command);
     }
 
     // split the command by command and pinged user
     std::map<std::string, std::string> filtered_command = filter_command(command);
-    
-    if (filtered_command.count("tagged"))
+    dpp::message love_response = handle_love_command(bot, filtered_command, command, event);
+
+    if (!love_response.content.empty() || !love_response.embeds.empty())
     {
-      dpp::snowflake user = std::stoull(filtered_command["tagged"].substr(2, filtered_command["tagged"].size() - 3));
-      if (filtered_command["prefix"] == "kiss")
-      {
-        // send a direct message to the user
-        bot.direct_message_create(user, dpp::message("i love u mwah"), [channel_id = event.msg.channel_id, &bot](const dpp::confirmation_callback_t & callback)
-        {
-          if (callback.is_error())
-          {
-            bot.message_create(dpp::message(channel_id, "sorry but i can't message this person :("));
-          }
-          else
-          {
-            bot.message_create(dpp::message(channel_id, "kissed :3"));
-          }
-        });
+      if (love_response.content == "<handled>") {
         return dpp::message();
       }
+      return love_response;
     }
 
-    std::string annotation_command = "give me annotations for text";
+    const std::vector<std::string> lt_commands = {
+      "language transfer", "lt", "what is language transfer", "what is lt", "explain language transfer", "explain lt"
+    };
 
-    if (command == "i love you")
+    const std::vector<std::string> love_commands = {
+      "i love you", "i love u", "i love you mwah", "i love u mwah"
+    };
+
+    const std::string annotation_command = "give me annotations for text";
+
+    if (std::any_of(love_commands.begin(), love_commands.end(), [&](const std::string& c)
+      { 
+        return command == c; 
+      }
+    ))
     {
       return dpp::message(event.msg.channel_id, "i love u too mwah");
     }
+    else if (std::any_of(lt_commands.begin(), lt_commands.end(), [&](const std::string& c)
+      { 
+        return command == c; 
+      }
+    ))
+    {
+      send_language_transfer_embed(event);
+      return dpp::message();
+    }
     else if (command.rfind(annotation_command, 0) == 0)
     {
-      size_t start = annotation_command.length();
-      while (start < command.length() && command[start] == ' ')
-      {
-        ++start;
-      }
-
-      // extract text id from remaining string;
-      std::string number_str = "";
-      while (start < command.length() && std::isdigit(command[start]))
-      {
-        number_str += command[start];
-        ++start;
-      }
-
-      if (number_str.empty())
-      {
-        return dpp::message(event.msg.channel_id, "bro enter a nubmer");
-      }
-
-      bot.message_create(dpp::message(
-        event.msg.channel_id, "bleep bloop finding annotations for text with id: " + number_str
-      ));
-
-      // get the annotations data and send it as a message
-      nlohmann::json annotations_data = select_annotations_data(number_str, true);
-      send_annotation_message(event, annotations_data);
-      return dpp::message(); // empty message to return
+      handle_annotation_command(bot, command, event, annotation_command);
+      return dpp::message();
     }
     else
     {

@@ -37,12 +37,12 @@ namespace postgres
     std::atomic<int> failed_acquires{0};
 
     std::unordered_map<std::string, std::string> prepared_statements;
-    std::queue<pqxx::connection*> pool;
+    std::queue<pqxx::connection *> pool;
     std::mutex pool_mutex;
     std::condition_variable pool_cv;
     
-    pqxx::connection* create_new_connection();
-    int validate_connection(pqxx::connection* c);
+    pqxx::connection * create_new_connection();
+    int validate_connection(pqxx::connection * c);
   public:
     int max_size;
     explicit ConnectionPool(int size);
@@ -51,11 +51,11 @@ namespace postgres
     ConnectionPool(const ConnectionPool &) = delete;
     ConnectionPool & operator=(const ConnectionPool &) = delete;
 
-    pqxx::connection* acquire();
-    void release(pqxx::connection* c);
+    pqxx::connection * acquire();
+    void release(pqxx::connection * c);
   };
 
-  extern std::unordered_map<pqxx::connection*, ConnectionMetadata> connection_metadata;
+  extern std::unordered_map<pqxx::connection *, ConnectionMetadata> connection_metadata;
   void init_connection();
   ConnectionPool & get_connection_pool();
   pqxx::work & begin_transaction(postgres::ConnectionPool & pool);

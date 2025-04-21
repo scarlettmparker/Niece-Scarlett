@@ -8,11 +8,9 @@
 
 int main()
 {
-  const std::string bot_token = BOT_BOT_TOKEN;
   const std::string_view PREFIX = "niece scarlett ";
-
   postgres::init_connection();
-  dpp::cluster bot(bot_token, dpp::i_message_content | dpp::i_default_intents | dpp::i_guild_members);
+  dpp::cluster bot(BOT_BOT_TOKEN, dpp::i_message_content | dpp::i_default_intents | dpp::i_guild_members);
 
   /**
    * 
@@ -37,7 +35,7 @@ int main()
     
     bot.guild_auditlog_get(guild_id, 0, 
       static_cast<uint32_t>(dpp::audit_type::aut_member_role_update),
-      0, 0, 1, [user_id](const dpp::confirmation_callback_t& callback) 
+      0, 0, 1, [user_id](const dpp::confirmation_callback_t & callback) 
       {
         if (callback.is_error()) 
         {
@@ -46,13 +44,13 @@ int main()
           return;
         }
   
-        const auto& audit_log = std::get<dpp::auditlog>(callback.value);
+        const auto & audit_log = std::get<dpp::auditlog>(callback.value);
         if (audit_log.entries.empty()) 
         {
           return;
         }
   
-        const auto& entry = audit_log.entries.front();
+        const auto & entry = audit_log.entries.front();
         for (const auto& change : entry.changes) 
         {
           std::cout << "Member " << user_id << ' ';

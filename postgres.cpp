@@ -31,7 +31,7 @@ namespace postgres
       throw std::runtime_error("Failed to open PostgreSQL connection!");
     }
 
-    pqxx::work txn(*c);
+    pqxx::work txn(* c);
 
     txn.conn().prepare("select_annotations_data",
       "SELECT array_to_json(array_agg(row_to_json(t))) "
@@ -45,8 +45,8 @@ namespace postgres
       "           'username', u.username,"
       "           'text_snippet', "
       "             SUBSTRING("
-      "               REGEXP_REPLACE(REGEXP_REPLACE(t.text, '<[^>]*>', '', 'g'), '\\s+|\\u00A0', ' ', 'g') "
-      "               FROM a.start FOR (a.\"end\" - a.start + 1)"
+      "               REGEXP_REPLACE(t.text, '<[^>]*>', '', 'g') "
+      "               FROM a.start + 1 FOR (a.\"end\" - a.start)"
       "             )"
       "         ) as annotation,"
       "         json_build_object("
@@ -59,10 +59,9 @@ namespace postgres
       "  LEFT JOIN public.\"Text\" t ON a.text_id = t.id"
       "  WHERE a.text_id = $1 "
       "  GROUP BY a.id, a.start, a.\"end\", a.text_id, a.description, a.created_at, u.id, u.username, t.text"
-      "  ORDER BY (COALESCE(SUM(CASE WHEN uai.type = 'LIKE' THEN 1 ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN uai.type = 'DISLIKE' THEN 1 ELSE 0 END), 0)) DESC"
+      "  ORDER BY a.start ASC"
       ") t"
     );
-    
 
     txn.commit();
     return c;
@@ -99,7 +98,7 @@ namespace postgres
   * Validate a connection by executing a simple query.
   * @param conn Connection to validate.
   */
-  int ConnectionPool::validate_connection(pqxx::connection* c)
+  int ConnectionPool::validate_connection(pqxx::connection * c)
   {
     try
     {
@@ -189,7 +188,7 @@ namespace postgres
   * Release a connection back to the pool.
   * @param c Connection to release.
   */
-  void ConnectionPool::release(pqxx::connection* c)
+  void ConnectionPool::release(pqxx::connection * c)
   {
     std::lock_guard<std::mutex> lock(pool_mutex);
     if (active_connections > 0)
@@ -207,7 +206,7 @@ namespace postgres
   {
     if (!global_pool)
     {
-      global_pool = new ConnectionPool(std::max(4u, std::thread::hardware_concurrency()));
+      global_pool = new ConnectionPool(std::max(2u, std::thread::hardware_concurrency()));
     }
     std::cout << "Postgres connection pool initialized with " << global_pool->max_size << " connections." << std::endl;
   }
@@ -222,7 +221,7 @@ namespace postgres
     {
       throw std::runtime_error("Connection pool not initialized. Call init_connection first.");
     }
-    return *global_pool;
+    return * global_pool;
   }
 
   /**
@@ -235,12 +234,12 @@ namespace postgres
   {
     static thread_local std::unique_ptr<pqxx::work> current_txn;
     
-    std::shared_ptr<pqxx::connection> conn(pool.acquire(), [&pool](pqxx::connection* c)
+    std::shared_ptr<pqxx::connection> conn(pool.acquire(), [& pool](pqxx::connection * c)
     {
       pool.release(c);
     });
 
-    current_txn = std::make_unique<pqxx::work>(*conn);
+    current_txn = std::make_unique<pqxx::work>(* conn);
     return * current_txn;
   }
 }
