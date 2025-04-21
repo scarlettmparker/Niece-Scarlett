@@ -13,7 +13,7 @@ namespace command
    *
    * @return JSON of annotation data.
    */
-  nlohmann::json select_annotations_data(std::string_view text_id, bool verbose)
+  nlohmann::json select_annotations_data(std::string text_id, bool verbose)
   {
     nlohmann::json annotations_data = nlohmann::json::array();
     try
@@ -95,7 +95,7 @@ namespace command
         msg.add_embed(embed);
       }
 
-      event.from->creator->message_create(msg);
+      event.from()->creator->message_create(msg);
     };
 
     send_page(current_page);
@@ -121,7 +121,7 @@ namespace command
 
     dpp::message msg(event.msg.channel_id, "");
     msg.add_embed(embed);
-    event.from->creator->message_create(msg);
+    event.from()->creator->message_create(msg);
   }
 
   /**

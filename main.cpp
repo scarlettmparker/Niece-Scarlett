@@ -30,7 +30,7 @@ int main()
 
   bot.on_guild_member_update([& bot](const dpp::guild_member_update_t & event) 
   {
-    const auto guild_id = event.updating_guild->id;
+    const auto guild_id = event.updating_guild.id;
     const auto user_id = event.updated.user_id;
     
     bot.guild_auditlog_get(guild_id, 0, 
@@ -80,6 +80,6 @@ int main()
     std::cout << "Bot is ready!" << std::endl;
   });
 
-  bot.start(false);
+  bot.start(dpp::st_return);
   return 0;
 }
