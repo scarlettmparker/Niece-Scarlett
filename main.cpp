@@ -80,6 +80,6 @@ int main()
     std::cout << "Bot is ready!" << std::endl;
   });
 
-  bot.start(dpp::st_return);
+  bot.start(dpp::st_wait);
   return 0;
 }
