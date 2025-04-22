@@ -254,15 +254,6 @@ namespace command
 
     // split the command by command and pinged user
     std::map<std::string, std::string> filtered_command = filter_command(command);
-    dpp::message love_response = handle_love_command(bot, filtered_command, command, event);
-
-    if (!love_response.content.empty() || !love_response.embeds.empty())
-    {
-      if (love_response.content == "<handled>") {
-        return dpp::message();
-      }
-      return love_response;
-    }
 
     const std::vector<std::string> lt_commands = {
       "language transfer", "lt", "what is language transfer", "what is lt", "explain language transfer", "explain lt"
@@ -295,6 +286,17 @@ namespace command
     {
       handle_annotation_command(bot, command, event, annotation_command);
       return dpp::message();
+    }
+    else if (filtered_command.count("prefix") && filtered_command.at("prefix") == "kiss")
+    {
+      dpp::message love_response = handle_love_command(bot, filtered_command, command, event);
+      if (!love_response.content.empty() || !love_response.embeds.empty())
+      {
+        if (love_response.content == "<handled>") {
+            return dpp::message();
+        }
+        return love_response;
+      }
     }
     else
     {
