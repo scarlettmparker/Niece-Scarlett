@@ -1,6 +1,7 @@
 #ifndef PING_FACTORY_HPP
 #define PING_FACTORY_HPP
 
+#include "../utils.hpp"
 #include <string>
 #include <optional>
 

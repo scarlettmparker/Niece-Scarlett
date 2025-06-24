@@ -3,6 +3,7 @@
 
 #include <dpp/dpp.h>
 #include "command_metadata.hpp"
+#include "../utils.hpp"
 #include "../registry/command_base.hpp"
 #include "../factory/ping_factory.hpp"
 #include "../factory/direct_message_factory.hpp"

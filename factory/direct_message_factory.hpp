@@ -1,5 +1,7 @@
 #ifndef DIRECT_MESSAGE_FACTORY_HPP
 #define DIRECT_MESSAGE_FACTORY_HPP
+
+#include "../utils.hpp"
 #include <dpp/dpp.h>
 #include <string>
 #include <functional>

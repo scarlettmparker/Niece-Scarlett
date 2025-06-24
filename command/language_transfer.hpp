@@ -1,6 +1,7 @@
 #ifndef LANGUAGE_TRANSFER_HPP
 #define LANGUAGE_TRANSFER_HPP
 
+#include "../utils.hpp"
 #include "../registry/command_base.hpp"
 #include "../factory/embed_factory.hpp"
 #include "command_metadata.hpp"

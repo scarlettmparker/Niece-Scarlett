@@ -26,6 +26,7 @@ namespace postgres
 
     if (!c->is_open())
     {
+      utils::Logger::instance().error("Failed to open PostgreSQL connection!");
       delete c;
       throw std::runtime_error("Failed to open PostgreSQL connection!");
     }
@@ -79,6 +80,7 @@ namespace postgres
     {
       pool.push(create_new_connection());
     }
+    utils::Logger::instance().info("Connection pool created");
   }
 
   /**
@@ -86,6 +88,7 @@ namespace postgres
    */
   ConnectionPool::~ConnectionPool()
   {
+    utils::Logger::instance().info("Destroying connection pool");
     std::lock_guard<std::mutex> lock(pool_mutex);
     while (!pool.empty())
     {
@@ -94,6 +97,7 @@ namespace postgres
       delete c;
     }
     connection_metadata.clear();
+    utils::Logger::instance().info("Connection pool destroyed");
   }
 
   /**
@@ -106,8 +110,14 @@ namespace postgres
     {
       return c->is_open();
     }
+    catch (const std::exception &e)
+    {
+      utils::Logger::instance().error(std::string("Exception during connection validation: ") + e.what());
+      return false;
+    }
     catch (...)
     {
+      utils::Logger::instance().error("Unknown exception during connection validation");
       return false;
     }
   }
@@ -120,6 +130,7 @@ namespace postgres
    */
   pqxx::connection *ConnectionPool::acquire()
   {
+    utils::Logger::instance().debug("Acquiring connection from pool");
     pqxx::connection *c = nullptr;
     auto now = std::chrono::steady_clock::now();
 
@@ -132,6 +143,7 @@ namespace postgres
       if (!got_connection)
       {
         failed_acquires++;
+        utils::Logger::instance().error("Connection pool timeout");
         throw std::runtime_error("Connection pool timeout");
       }
 
@@ -158,16 +170,19 @@ namespace postgres
 
         if (!metadata.is_healthy)
         {
+          utils::Logger::instance().error("Connection not healthy, recreating");
           delete c;
           try
           {
             // ... attempt to create a new connection ...
             c = create_new_connection();
             connection_metadata[c] = {now, now, true};
+            utils::Logger::instance().info("Recreated unhealthy connection");
             return c;
           }
           catch (const std::exception &e)
           {
+            utils::Logger::instance().error(std::string("Failed to recreate connection: ") + e.what());
             if (retry == MAX_RETRIES - 1)
             {
               active_connections--;
@@ -179,10 +194,12 @@ namespace postgres
         }
       }
       metadata.last_used = now;
+      utils::Logger::instance().debug("Connection acquired from pool");
       return c;
     }
 
     active_connections--;
+    utils::Logger::instance().error("Failed to acquire connection after retries");
     throw std::runtime_error("Failed to acquire connection");
   }
 
@@ -192,6 +209,7 @@ namespace postgres
    */
   void ConnectionPool::release(pqxx::connection *c)
   {
+    utils::Logger::instance().debug("Releasing connection back to pool");
     std::lock_guard<std::mutex> lock(pool_mutex);
     if (active_connections > 0)
     {
@@ -199,6 +217,7 @@ namespace postgres
     }
     pool.push(c);
     pool_cv.notify_one();
+    utils::Logger::instance().debug("Connection released");
   }
 
   /**
@@ -209,9 +228,8 @@ namespace postgres
     if (!global_pool)
     {
       global_pool = new ConnectionPool(std::max(2u, std::thread::hardware_concurrency()));
-      utils::Logger::instance().debug("Postgres connection pool initialized");
     }
-    std::cout << "Postgres connection pool initialized with " << global_pool->max_size << " connections." << std::endl;
+    utils::Logger::instance().info("Postgres connection pool initialized with " + std::to_string(global_pool->max_size) + " connections.");
   }
 
   /**
@@ -222,6 +240,7 @@ namespace postgres
   {
     if (!global_pool)
     {
+      utils::Logger::instance().error("Connection pool not initialized. Call init_connection first.");
       throw std::runtime_error("Connection pool not initialized. Call init_connection first.");
     }
     return *global_pool;
@@ -235,6 +254,7 @@ namespace postgres
    */
   std::unique_ptr<pqxx::work> begin_transaction(postgres::ConnectionPool &pool)
   {
+    utils::Logger::instance().debug("Beginning new transaction");
     std::shared_ptr<pqxx::connection> conn(pool.acquire(), [&pool](pqxx::connection *c)
                                            { pool.release(c); });
     return std::make_unique<pqxx::work>(*conn);

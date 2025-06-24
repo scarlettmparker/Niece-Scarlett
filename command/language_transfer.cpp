@@ -1,15 +1,26 @@
 #include "language_transfer.hpp"
-#include "../utils.hpp"
 
 namespace command
 {
-  std::string LanguageTransferCommand::name() const { return "language_transfer"; }
-  std::vector<std::string> LanguageTransferCommand::alternatives() const { return {"lt", "what is language transfer", "what is lt", "explain language transfer", "explain lt"}; }
-  std::string LanguageTransferCommand::permission() const { return "command.language_transfer"; }
+  std::string LanguageTransferCommand::name() const
+  {
+    utils::Logger::instance().debug("LanguageTransferCommand::name() called");
+    return "language_transfer";
+  }
+  std::vector<std::string> LanguageTransferCommand::alternatives() const
+  {
+    utils::Logger::instance().debug("LanguageTransferCommand::alternatives() called");
+    return {"lt", "what is language transfer", "what is lt", "explain language transfer", "explain lt"};
+  }
+  std::string LanguageTransferCommand::permission() const
+  {
+    utils::Logger::instance().debug("LanguageTransferCommand::permission() called");
+    return "command.language_transfer";
+  }
   dpp::message LanguageTransferCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
     utils::Logger::instance().debug("LanguageTransferCommand::execute called with cmd: " + cmd);
-
+    utils::Logger::instance().info("Sending Language Transfer embed");
     factory::EmbedFactory()
         .set_command("lt")
         .set_title("What is Language Transfer?")
@@ -26,5 +37,6 @@ namespace command
 
 extern "C" command::CommandBase *create_language_transfer_command()
 {
+  utils::Logger::instance().debug("create_language_transfer_command() called");
   return new command::LanguageTransferCommand();
 }

@@ -2,6 +2,7 @@
 #define COMMAND_REGISTRY_HPP
 
 #include "../command/command_metadata.hpp"
+#include "../utils.hpp"
 #include "command_base.hpp"
 #include <string>
 #include <map>
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <dlfcn.h>
 #include <filesystem>
+#include <cctype>
 
 namespace command
 {

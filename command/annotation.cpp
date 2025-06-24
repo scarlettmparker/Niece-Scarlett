@@ -1,11 +1,22 @@
 #include "annotation.hpp"
-#include "../utils.hpp"
 
 namespace command
 {
-  std::string AnnotationCommand::name() const { return "annotation"; }
-  std::vector<std::string> AnnotationCommand::alternatives() const { return {"give me annotations for text"}; }
-  std::string AnnotationCommand::permission() const { return "command.annotation"; }
+  std::string AnnotationCommand::name() const
+  {
+    utils::Logger::instance().debug("AnnotationCommand::name() called");
+    return "annotation";
+  }
+  std::vector<std::string> AnnotationCommand::alternatives() const
+  {
+    utils::Logger::instance().debug("AnnotationCommand::alternatives() called");
+    return {"give me annotations for text"};
+  }
+  std::string AnnotationCommand::permission() const
+  {
+    utils::Logger::instance().debug("AnnotationCommand::permission() called");
+    return "command.annotation";
+  }
   dpp::message AnnotationCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
     utils::Logger::instance().debug("AnnotationCommand::execute called with cmd: " + cmd);
@@ -40,6 +51,7 @@ namespace command
                 std::string username = annotation["author"]["username"];
                 int likes = annotation["annotation"]["likes"];
                 int dislikes = annotation["annotation"]["dislikes"];
+                utils::Logger::instance().debug("Adding annotation embed: title=" + title + ", by=" + username);
                 factory::EmbedFactory embedFactory;
                 embedFactory.set_title(title)
                     .set_footer("Annotation by: " + username)
@@ -53,5 +65,6 @@ namespace command
 
 extern "C" command::CommandBase *create_annotation_command()
 {
+  utils::Logger::instance().debug("create_annotation_command() called");
   return new command::AnnotationCommand();
 }

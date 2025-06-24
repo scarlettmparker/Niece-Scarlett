@@ -19,7 +19,7 @@ namespace factory
     std::string title;
     std::string description;
     dpp::embed_footer footer;
-    std::string image_url; // New: store image URL
+    std::string image_url;
 
   public:
     /**

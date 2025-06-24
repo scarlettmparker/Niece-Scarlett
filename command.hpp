@@ -2,6 +2,7 @@
 #define COMMAND_HPP
 
 #include "registry/command_registry.hpp"
+#include "utils.hpp"
 #include <dpp/dpp.h>
 #include <string>
 #include <iostream>
