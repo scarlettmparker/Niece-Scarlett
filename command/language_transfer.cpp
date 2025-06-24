@@ -1,10 +1,12 @@
 #include "language_transfer.hpp"
 
-namespace command {
+namespace command
+{
   std::string LanguageTransferCommand::name() const { return "language_transfer"; }
   std::vector<std::string> LanguageTransferCommand::alternatives() const { return {"lt", "what is language transfer", "what is lt", "explain language transfer", "explain lt"}; }
   std::string LanguageTransferCommand::permission() const { return "command.language_transfer"; }
-  dpp::message LanguageTransferCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event) {
+  dpp::message LanguageTransferCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
+  {
     factory::EmbedFactory()
         .set_command("lt")
         .set_title("What is Language Transfer?")
@@ -19,6 +21,7 @@ namespace command {
   }
 }
 
-extern "C" command::CommandBase *create_language_transfer_command() {
+extern "C" command::CommandBase *create_language_transfer_command()
+{
   return new command::LanguageTransferCommand();
 }

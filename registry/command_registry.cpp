@@ -36,7 +36,7 @@ namespace command
     for (const auto &pair : alias_map_)
     {
       const std::string &alias = pair.first;
-      if (input.rfind(alias, 0) == 0) // input starts with alias
+      if (input.rfind(alias, 0) == 0)
       {
         if (alias.length() > best_len)
         {
@@ -63,10 +63,6 @@ namespace command
         std::cerr << "dlopen failed: " << dlerror() << std::endl;
         continue;
       }
-      else
-      {
-        std::cerr << "Loaded " << lib_path << " successfully." << std::endl;
-      }
       std::string stem = entry.path().stem().string();
       if (stem.rfind("lib", 0) == 0)
         stem = stem.substr(3);
@@ -78,10 +74,6 @@ namespace command
         std::cerr << "dlsym failed for " << create_func_name << ": " << dlerror() << std::endl;
         dlclose(lib_handle);
         continue;
-      }
-      else
-      {
-        std::cerr << "Found symbol: " << create_func_name << std::endl;
       }
       std::unique_ptr<CommandBase> cmd_ptr(create_func());
       std::string main_name = cmd_ptr->name();
