@@ -20,6 +20,7 @@ namespace command
       // TODO: Check permissions here if needed
       return cmd->execute(bot, command, event);
     }
-    return dpp::message(event.msg.channel_id, "i don't know this command :(");
+    // Do not send any message if command is not found
+    return dpp::message();
   }
 }

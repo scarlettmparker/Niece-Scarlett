@@ -1,4 +1,6 @@
 #include "command_registry.hpp"
+#include <algorithm> // For std::transform
+#include <cctype>    // For ::tolower
 
 namespace command
 {
@@ -31,18 +33,21 @@ namespace command
   // Find the best matching command for the input (longest prefix match)
   CommandBase *CommandRegistry::find_matching_command(const std::string &input, std::string &matched_alias) const
   {
+    std::string input_lower = input;
+    std::transform(input_lower.begin(), input_lower.end(), input_lower.begin(), ::tolower);
     size_t best_len = 0;
     CommandBase *best_cmd = nullptr;
     for (const auto &pair : alias_map_)
     {
-      const std::string &alias = pair.first;
-      if (input.rfind(alias, 0) == 0)
+      std::string alias_lower = pair.first;
+      std::transform(alias_lower.begin(), alias_lower.end(), alias_lower.begin(), ::tolower);
+      if (input_lower.rfind(alias_lower, 0) == 0) // input starts with alias (case-insensitive)
       {
-        if (alias.length() > best_len)
+        if (alias_lower.length() > best_len)
         {
-          best_len = alias.length();
+          best_len = alias_lower.length();
           best_cmd = pair.second;
-          matched_alias = alias;
+          matched_alias = pair.first;
         }
       }
     }
