@@ -2,6 +2,9 @@
 #define PBP_EMBED_FACTORY_HPP
 
 #include "embed_factory.hpp"
+#include "../utils.hpp"
+#include <string>
+#include <memory>
 #include <string>
 #include <dpp/dpp.h>
 #include <functional>

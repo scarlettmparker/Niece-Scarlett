@@ -1,9 +1,10 @@
 #ifndef EMBED_FACTORY_HPP
 #define EMBED_FACTORY_HPP
 
+#include "../utils.hpp"
 #include <dpp/dpp.h>
 #include <string>
-#include "../utils.hpp"
+#include <regex>
 
 namespace factory
 {

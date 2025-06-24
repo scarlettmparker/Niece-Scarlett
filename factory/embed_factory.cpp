@@ -1,4 +1,3 @@
-#include <regex>
 #include "embed_factory.hpp"
 
 namespace factory
