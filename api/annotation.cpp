@@ -2,7 +2,31 @@
 
 namespace api::annotation
 {
-  nlohmann::json select_annotations_data(std::string_view text_id, bool verbose)
+  int get_annotation_count(std::string_view text_id)
+  {
+    int count = 0;
+    try
+    {
+      postgres::ConnectionPool &pool = postgres::get_connection_pool();
+      pqxx::work &txn = postgres::begin_transaction(pool);
+
+      pqxx::result r = txn.exec_prepared(
+          "get_annotation_count", text_id);
+
+      if (!r.empty())
+      {
+        count = r[0][0].as<int>();
+      }
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error getting annotation count: " << e.what() << std::endl;
+    }
+
+    return count;
+  }
+
+  nlohmann::json select_annotations_data(std::string_view text_id, int page, int limit)
   {
     nlohmann::json annotations_data = nlohmann::json::array();
     try
@@ -10,13 +34,15 @@ namespace api::annotation
       postgres::ConnectionPool &pool = postgres::get_connection_pool();
       pqxx::work &txn = postgres::begin_transaction(pool);
 
+      int offset = page * limit;
+
       pqxx::result r = txn.exec_prepared(
           "select_annotations_data",
-          text_id);
+          text_id, limit, offset);
 
       if (r.empty() || r[0][0].is_null())
       {
-        verbose &&std::cout << "No annotations found for text_id: " << text_id << std::endl;
+        std::cerr << "No annotations found for text_id: " << text_id << std::endl;
         return annotations_data;
       }
 
@@ -24,11 +50,11 @@ namespace api::annotation
     }
     catch (const std::exception &e)
     {
-      verbose &&std::cerr << "Error executing query: " << e.what() << std::endl;
+      std::cerr << "Error executing query: " << e.what() << std::endl;
     }
     catch (...)
     {
-      verbose &&std::cerr << "Unknown error while executing query" << std::endl;
+      std::cerr << "Unknown error while executing query" << std::endl;
     }
     return annotations_data;
   }

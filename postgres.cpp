@@ -32,6 +32,9 @@ namespace postgres
 
     pqxx::work txn(*c);
 
+    txn.conn().prepare("get_annotation_count",
+                       "SELECT COUNT(*) FROM public.\"Annotation\" WHERE text_id = $1");
+
     txn.conn().prepare("select_annotations_data",
                        "SELECT array_to_json(array_agg(row_to_json(t))) "
                        "FROM ("
@@ -59,6 +62,7 @@ namespace postgres
                        "  WHERE a.text_id = $1 "
                        "  GROUP BY a.id, a.start, a.\"end\", a.text_id, a.description, a.created_at, u.id, u.username, t.text"
                        "  ORDER BY a.start ASC"
+                       "  LIMIT $2 OFFSET $3"
                        ") t");
 
     txn.commit();

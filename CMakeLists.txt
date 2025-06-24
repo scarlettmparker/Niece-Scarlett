@@ -53,20 +53,61 @@ endif()
 
 link_directories("lib")
 include_directories("lib/include")
+
+# ───────────────────────────────────────────────────────────────
+# Build command plugins as shared libraries
+# ───────────────────────────────────────────────────────────────
+file(GLOB COMMAND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/command/*.cpp")
+
+foreach(SOURCE_FILE ${COMMAND_SOURCES})
+  get_filename_component(LIB_NAME ${SOURCE_FILE} NAME_WE)
+  add_library(
+    ${LIB_NAME} SHARED ${SOURCE_FILE}
+    # Add any dependencies needed by all commands here
+  )
+  set_target_properties(
+    ${LIB_NAME}
+    PROPERTIES OUTPUT_NAME ${LIB_NAME}
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/command/plugins"
+  )
+  target_link_libraries(
+    ${LIB_NAME}
+    dpp
+    ${LIBPQXX_LIB}
+    ${LIBPQ_LIBRARIES}
+    pthread
+    dl
+    ${OPUS_LIBRARIES}
+  )
+endforeach()
+
+# ───────────────────────────────────────────────────────────────
+# Main executable
+# ───────────────────────────────────────────────────────────────
 add_executable(GreekUtils
   main.cpp
   command.cpp
   postgres.cpp
+  utils.cpp
   api/annotation.cpp
-  factory/faq_factory.cpp
+  factory/embed_factory.cpp
+  factory/direct_message_factory.cpp
+  factory/pbp_embed_factory.cpp
+  factory/ping_factory.cpp
+  registry/command_registry.cpp
 )
 
 target_link_libraries(GreekUtils
   dpp
   ${LIBPQXX_LIB}
   ${LIBPQ_LIBRARIES}
+  pthread
+  dl
   ${OPUS_LIBRARIES}
 )
+
+set_target_properties(GreekUtils PROPERTIES LINK_FLAGS "-rdynamic")
+set_target_properties(GreekUtils PROPERTIES ENABLE_EXPORTS ON)
 
 target_include_directories(GreekUtils PRIVATE 
   ${OPUS_INCLUDE_DIRS}

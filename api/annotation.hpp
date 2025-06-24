@@ -9,6 +9,7 @@
 
 namespace api::annotation
 {
+  int get_annotation_count(std::string_view text_id);
   /**
    * Selects annotations data from the database. This will return the annotation ID,
    * annotation description, dislikes, likes, creation date and author data of the annotations,
@@ -19,7 +20,7 @@ namespace api::annotation
    *
    * @return JSON of annotation data.
    */
-  nlohmann::json select_annotations_data(std::string_view text_id, bool verbose = false);
+  nlohmann::json select_annotations_data(std::string_view text_id, int page, int limit);
 }
 
 #endif // API_ANNOTATIONS_HPP

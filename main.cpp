@@ -9,6 +9,7 @@
 int main()
 {
   const std::string_view prefix = "niece scarlett ";
+  postgres::init_connection();
   std::cout << BOT_BOT_TOKEN << std::endl;
   dpp::cluster bot(BOT_BOT_TOKEN, dpp::i_message_content | dpp::i_default_intents | dpp::i_guild_members);
 
