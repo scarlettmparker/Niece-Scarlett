@@ -1,4 +1,5 @@
 #include "kiss.hpp"
+#include "../utils.hpp"
 
 namespace command
 {
@@ -7,6 +8,7 @@ namespace command
   std::string KissCommand::permission() const { return "command.kiss"; }
   dpp::message KissCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
+    utils::Logger::instance().debug("KissCommand::execute called with cmd: " + cmd);
     auto result = PingFactory::parse_ping(cmd);
     if (!result.user_id.has_value())
       return dpp::message(event.msg.channel_id, "Please tag a user to kiss.");

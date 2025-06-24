@@ -1,4 +1,5 @@
 #include "language_transfer.hpp"
+#include "../utils.hpp"
 
 namespace command
 {
@@ -7,6 +8,8 @@ namespace command
   std::string LanguageTransferCommand::permission() const { return "command.language_transfer"; }
   dpp::message LanguageTransferCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
+    utils::Logger::instance().debug("LanguageTransferCommand::execute called with cmd: " + cmd);
+
     factory::EmbedFactory()
         .set_command("lt")
         .set_title("What is Language Transfer?")

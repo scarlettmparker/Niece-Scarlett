@@ -1,4 +1,5 @@
 #include "love.hpp"
+#include "../utils.hpp"
 
 namespace command
 {
@@ -7,6 +8,9 @@ namespace command
   std::string LoveCommand::permission() const { return "command.love"; }
   dpp::message LoveCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
+    // Add logging to command execution
+    utils::Logger::instance().debug("LoveCommand::execute called with cmd: " + cmd);
+
     return dpp::message(event.msg.channel_id, "i love u too mwah");
   }
 }

@@ -1,4 +1,5 @@
 #include "annotation.hpp"
+#include "../utils.hpp"
 
 namespace api::annotation
 {
@@ -8,9 +9,9 @@ namespace api::annotation
     try
     {
       postgres::ConnectionPool &pool = postgres::get_connection_pool();
-      pqxx::work &txn = postgres::begin_transaction(pool);
+      auto txn = postgres::begin_transaction(pool);
 
-      pqxx::result r = txn.exec_prepared(
+      pqxx::result r = txn->exec_prepared(
           "get_annotation_count", text_id);
 
       if (!r.empty())
@@ -20,7 +21,7 @@ namespace api::annotation
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error getting annotation count: " << e.what() << std::endl;
+      utils::Logger::instance().error(std::string("Error getting annotation count: ") + e.what());
     }
 
     return count;
@@ -32,17 +33,17 @@ namespace api::annotation
     try
     {
       postgres::ConnectionPool &pool = postgres::get_connection_pool();
-      pqxx::work &txn = postgres::begin_transaction(pool);
+      auto txn = postgres::begin_transaction(pool);
 
       int offset = page * limit;
 
-      pqxx::result r = txn.exec_prepared(
+      pqxx::result r = txn->exec_prepared(
           "select_annotations_data",
           text_id, limit, offset);
 
       if (r.empty() || r[0][0].is_null())
       {
-        std::cerr << "No annotations found for text_id: " << text_id << std::endl;
+        utils::Logger::instance().info("No annotations found for text_id: " + std::string(text_id));
         return annotations_data;
       }
 
@@ -50,11 +51,11 @@ namespace api::annotation
     }
     catch (const std::exception &e)
     {
-      std::cerr << "Error executing query: " << e.what() << std::endl;
+      utils::Logger::instance().error(std::string("Error executing query: ") + e.what());
     }
     catch (...)
     {
-      std::cerr << "Unknown error while executing query" << std::endl;
+      utils::Logger::instance().error("Unknown error while executing query");
     }
     return annotations_data;
   }

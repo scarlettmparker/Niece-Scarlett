@@ -1,6 +1,7 @@
 #include "command_registry.hpp"
 #include <algorithm> // For std::transform
 #include <cctype>    // For ::tolower
+#include "../utils.hpp"
 
 namespace command
 {
@@ -20,6 +21,7 @@ namespace command
       alias_map_[alt] = cmd.get();
     }
     commands_[main_name] = std::move(cmd);
+    utils::Logger::instance().debug("CommandRegistry::register_command called for: " + cmd->name());
   }
 
   CommandBase *CommandRegistry::get_command(const std::string &name)

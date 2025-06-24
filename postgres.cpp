@@ -209,6 +209,7 @@ namespace postgres
     if (!global_pool)
     {
       global_pool = new ConnectionPool(std::max(2u, std::thread::hardware_concurrency()));
+      utils::Logger::instance().debug("Postgres connection pool initialized");
     }
     std::cout << "Postgres connection pool initialized with " << global_pool->max_size << " connections." << std::endl;
   }
@@ -232,14 +233,10 @@ namespace postgres
    * @param pool Connection pool to get a connection from.
    * @return Transaction object for the database.
    */
-  pqxx::work &begin_transaction(postgres::ConnectionPool &pool)
+  std::unique_ptr<pqxx::work> begin_transaction(postgres::ConnectionPool &pool)
   {
-    static thread_local std::unique_ptr<pqxx::work> current_txn;
-
     std::shared_ptr<pqxx::connection> conn(pool.acquire(), [&pool](pqxx::connection *c)
                                            { pool.release(c); });
-
-    current_txn = std::make_unique<pqxx::work>(*conn);
-    return *current_txn;
+    return std::make_unique<pqxx::work>(*conn);
   }
 }

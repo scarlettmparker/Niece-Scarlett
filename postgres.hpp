@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include "config.h"
+#include "utils.hpp"
 
 namespace postgres
 {
@@ -59,7 +60,7 @@ namespace postgres
   extern std::unordered_map<pqxx::connection *, ConnectionMetadata> connection_metadata;
   void init_connection();
   ConnectionPool &get_connection_pool();
-  pqxx::work &begin_transaction(postgres::ConnectionPool &pool);
+  std::unique_ptr<pqxx::work> begin_transaction(postgres::ConnectionPool &pool);
 }
 
 #endif

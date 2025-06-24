@@ -5,9 +5,11 @@
 #include "config.h"
 #include "command.hpp"
 #include "postgres.hpp"
+#include "utils.hpp"
 
 int main()
 {
+  utils::Logger::instance().initialize_from_env();
   const std::string_view prefix = "niece scarlett ";
   postgres::init_connection();
   std::cout << BOT_BOT_TOKEN << std::endl;

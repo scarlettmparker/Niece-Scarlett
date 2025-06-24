@@ -4,3 +4,4 @@
 #define BOT_DB_HOST "@BOT_DB_HOST@"
 #define BOT_DB_PORT "@BOT_DB_PORT@"
 #define BOT_DB_NAME "@BOT_DB_NAME@"
+#define BOT_LOG_LEVEL "@BOT_LOG_LEVEL@"
