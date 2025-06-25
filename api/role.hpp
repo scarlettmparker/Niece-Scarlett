@@ -10,6 +10,17 @@
 namespace api::role
 {
   /**
+   * @brief Enum representing the user's permission status.
+   */
+  enum class PermissionStatus
+  {
+    NO_ACCOUNT = 0,     ///< Discord ID not found in database
+    AUTHORISED = 1,     ///< User has the required permission
+    NOT_AUTHORISED = 2, ///< User exists but lacks required permission
+    BANNED = 3          ///< User is banned
+  };
+
+  /**
    * @brief Retrieves a list of permissions associated with a user based on their Discord ID.
    *
    * This function performs a PostgreSQL query using the provided Discord ID
@@ -18,10 +29,10 @@ namespace api::role
    * @param discord_id The Discord user ID as a string.
    * @return A vector of permission strings associated with the user's roles.
    */
-  std::vector<std::string> get_user_permissions_by_discord_id(const std::string& discord_id);
+  std::vector<std::string> get_user_permissions_by_discord_id(const std::string &discord_id);
 
   /**
-   * @brief Checks if a user has the required permission.
+   * @brief Checks the user's permission status based on their Discord ID and required permission.
    *
    * Supports exact match as well as hierarchical wildcard checks.
    * For example, if the required permission is "bot.command.language_transfer",
@@ -31,9 +42,9 @@ namespace api::role
    * - "bot.*"
    * - "*"
    *
-   * @param user_permissions A list of permission strings the user possesses.
-   * @param required_permission The permission required to perform an action.
-   * @return true if the user has the required permission (directly or via wildcard), false otherwise.
+   * @param discord_id The user's Discord ID.
+   * @param required_permission The permission string to check.
+   * @return The status as a PermissionStatus enum value.
    */
-  bool has_permission(const std::vector<std::string>& user_permissions, const std::string& required_permission);
+  PermissionStatus check_permission_status(const std::string &discord_id, const std::string &required_permission);
 }

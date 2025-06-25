@@ -74,6 +74,12 @@ namespace postgres
                        "JOIN public.\"Permission\" p ON rp.permission_id = p.id "
                        "WHERE u.discord_id = $1");
 
+    txn.conn().prepare("get_user_status_by_discord_id",
+                       "SELECT s.name "
+                       "FROM public.\"User\" u "
+                       "JOIN public.\"Status\" s ON u.status = s.id "
+                       "WHERE u.discord_id = $1");
+
     txn.commit();
     return c;
   }

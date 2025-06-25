@@ -18,19 +18,31 @@ namespace command
     {
       utils::Logger::instance().info("Matched command: " + matched_alias + ", permission required: " + cmd->permission());
       std::string discord_id = std::to_string(event.msg.author.id);
-      auto user_permissions = api::role::get_user_permissions_by_discord_id(discord_id);
-
-      // Get required permission for the command
       std::string required_perm = cmd->permission();
-      if (!api::role::has_permission(user_permissions, required_perm))
-      {
-        return dpp::message(event.msg.channel_id, "😢 💔 you don't have permission to use this command 😢");
-      }
 
-      return cmd->execute(bot, command, event);
+      api::role::PermissionStatus status = api::role::check_permission_status(discord_id, required_perm);
+
+      switch (status)
+      {
+      case api::role::PermissionStatus::NO_ACCOUNT:
+        return dpp::message(event.msg.channel_id,
+                            "You are not registered to Guided Reader. Please register at https://reader.scarlettparker.co.uk");
+
+      case api::role::PermissionStatus::BANNED:
+        return dpp::message(event.msg.channel_id,
+                            "You have been banned and are thereby restricted from using any commands.");
+
+      case api::role::PermissionStatus::NOT_AUTHORISED:
+        return dpp::message(event.msg.channel_id,
+                            "😢 💔 you don't have permission to use this command 😢");
+
+      case api::role::PermissionStatus::AUTHORISED:
+        return cmd->execute(bot, command, event);
+      }
     }
-    utils::Logger::instance().info("No matching command found for: " + command);
+
     // Do not send any message if command is not found
+    utils::Logger::instance().info("No matching command found for: " + command);
     return dpp::message();
   }
 }

@@ -28,47 +28,70 @@ namespace api::role
     return permissions;
   }
 
-  bool has_permission(const std::vector<std::string> &user_permissions, const std::string &required_permission)
+  PermissionStatus check_permission_status(const std::string &discord_id, const std::string &required_permission)
   {
-    utils::Logger::instance().debug("Checking permission: " + required_permission);
-    if (user_permissions.empty())
-    {
-      utils::Logger::instance().info("User has no permissions");
-      return false;
-    }
+    utils::Logger::instance().debug("Checking permission status for: " + discord_id);
 
-    // Exact match
-    if (std::find(user_permissions.begin(), user_permissions.end(), required_permission) != user_permissions.end())
+    try
     {
-      utils::Logger::instance().debug("Permission granted by exact match: " + required_permission);
-      return true;
-    }
+      postgres::ConnectionPool &pool = postgres::get_connection_pool();
+      auto txn = postgres::begin_transaction(pool);
 
-    // Check wildcard hierarchy
-    std::string permission_prefix = required_permission;
-    while (true)
-    {
-      size_t pos = permission_prefix.rfind('.');
-      if (pos == std::string::npos)
-        break;
+      // First, check if the user exists and fetch their status
+      pqxx::result user_status_res = txn->exec_prepared(
+          "get_user_status_by_discord_id",
+          discord_id);
 
-      permission_prefix = permission_prefix.substr(0, pos);
-      std::string wildcard = permission_prefix + ".*";
-      if (std::find(user_permissions.begin(), user_permissions.end(), wildcard) != user_permissions.end())
+      if (user_status_res.empty())
       {
-        utils::Logger::instance().debug("Permission granted by wildcard: " + wildcard);
-        return true;
+        utils::Logger::instance().info("User not found in DB: " + discord_id);
+        return PermissionStatus::NO_ACCOUNT;
       }
-    }
 
-    // Check top-level *
-    if (std::find(user_permissions.begin(), user_permissions.end(), "*") != user_permissions.end())
+      std::string user_status = user_status_res[0][0].as<std::string>();
+      if (user_status == "BANNED")
+      {
+        utils::Logger::instance().debug("User is banned: " + discord_id);
+        return PermissionStatus::BANNED;
+      }
+
+      // Fetch permissions
+      std::vector<std::string> permissions = get_user_permissions_by_discord_id(discord_id);
+
+      // Check permission logic
+      if (permissions.empty())
+      {
+        utils::Logger::instance().info("User has no permissions: " + discord_id);
+        return PermissionStatus::NOT_AUTHORISED;
+      }
+
+      // Exact match
+      if (std::find(permissions.begin(), permissions.end(), required_permission) != permissions.end())
+        return PermissionStatus::AUTHORISED;
+
+      // Wildcard match
+      std::string prefix = required_permission;
+      while (true)
+      {
+        size_t pos = prefix.rfind('.');
+        if (pos == std::string::npos)
+          break;
+
+        prefix = prefix.substr(0, pos);
+        std::string wildcard = prefix + ".*";
+        if (std::find(permissions.begin(), permissions.end(), wildcard) != permissions.end())
+          return PermissionStatus::AUTHORISED;
+      }
+
+      if (std::find(permissions.begin(), permissions.end(), "*") != permissions.end())
+        return PermissionStatus::AUTHORISED;
+
+      return PermissionStatus::NOT_AUTHORISED;
+    }
+    catch (const std::exception &e)
     {
-      utils::Logger::instance().debug("Permission granted by top-level wildcard");
-      return true;
+      utils::Logger::instance().error("Error during permission check: " + std::string(e.what()));
+      return PermissionStatus::NOT_AUTHORISED;
     }
-
-    utils::Logger::instance().info("Permission denied: " + required_permission);
-    return false;
   }
 }
