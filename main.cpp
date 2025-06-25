@@ -23,7 +23,6 @@ int main()
   bot.on_message_create([&prefix, &bot](const dpp::message_create_t &event)
                         {
     std::string message = event.msg.content;
-    utils::Logger::instance().debug("Received message: " + message);
     if (message.length() >= prefix.length() && std::equal(prefix.begin(), prefix.end(), message.begin(), [](char a, char b)
     { 
       return std::tolower(a) == std::tolower(b);

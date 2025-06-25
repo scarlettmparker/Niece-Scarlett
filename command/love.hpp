@@ -3,7 +3,6 @@
 
 #include "../registry/command_base.hpp"
 #include "../utils.hpp"
-#include "command_metadata.hpp"
 #include <dpp/dpp.h>
 
 namespace command

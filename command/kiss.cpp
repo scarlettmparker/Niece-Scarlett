@@ -15,7 +15,7 @@ namespace command
   std::string KissCommand::permission() const
   {
     utils::Logger::instance().debug("KissCommand::permission() called");
-    return "command.kiss";
+    return "bot.command.kiss";
   }
   dpp::message KissCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {

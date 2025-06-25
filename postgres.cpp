@@ -66,6 +66,14 @@ namespace postgres
                        "  LIMIT $2 OFFSET $3"
                        ") t");
 
+    txn.conn().prepare("get_user_permissions_by_discord_id",
+                       "SELECT p.name "
+                       "FROM public.\"User\" u "
+                       "JOIN public.\"UserRole\" ur ON u.id = ur.user_id "
+                       "JOIN public.\"RolePermission\" rp ON ur.role_id = rp.role_id "
+                       "JOIN public.\"Permission\" p ON rp.permission_id = p.id "
+                       "WHERE u.discord_id = $1");
+
     txn.commit();
     return c;
   }

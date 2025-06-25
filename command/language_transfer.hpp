@@ -4,7 +4,6 @@
 #include "../utils.hpp"
 #include "../registry/command_base.hpp"
 #include "../factory/embed_factory.hpp"
-#include "command_metadata.hpp"
 
 namespace command
 {

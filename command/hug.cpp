@@ -15,7 +15,7 @@ namespace command
   std::string HugCommand::permission() const
   {
     utils::Logger::instance().debug("HugCommand::permission() called");
-    return "command.hug";
+    return "bot.command.hug";
   }
   dpp::message HugCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {

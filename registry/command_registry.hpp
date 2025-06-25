@@ -1,7 +1,6 @@
 #ifndef COMMAND_REGISTRY_HPP
 #define COMMAND_REGISTRY_HPP
 
-#include "../command/command_metadata.hpp"
 #include "../utils.hpp"
 #include "command_base.hpp"
 #include <string>

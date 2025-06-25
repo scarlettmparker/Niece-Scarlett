@@ -1,7 +1,6 @@
 #ifndef ANNOTATION_HPP
 #define ANNOTATION_HPP
 
-#include "command_metadata.hpp"
 #include "../utils.hpp"
 #include "../registry/command_base.hpp"
 #include "../api/annotation.hpp"

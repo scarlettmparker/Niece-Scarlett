@@ -17,7 +17,16 @@ namespace command
     if (cmd)
     {
       utils::Logger::instance().info("Matched command: " + matched_alias + ", permission required: " + cmd->permission());
-      // TODO: Check permissions here if needed
+      std::string discord_id = std::to_string(event.msg.author.id);
+      auto user_permissions = api::role::get_user_permissions_by_discord_id(discord_id);
+
+      // Get required permission for the command
+      std::string required_perm = cmd->permission();
+      if (!api::role::has_permission(user_permissions, required_perm))
+      {
+        return dpp::message(event.msg.channel_id, "😢 💔 you don't have permission to use this command 😢");
+      }
+
       return cmd->execute(bot, command, event);
     }
     utils::Logger::instance().info("No matching command found for: " + command);

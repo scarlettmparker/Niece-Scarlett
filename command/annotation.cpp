@@ -15,7 +15,7 @@ namespace command
   std::string AnnotationCommand::permission() const
   {
     utils::Logger::instance().debug("AnnotationCommand::permission() called");
-    return "command.annotation";
+    return "bot.command.annotation";
   }
   dpp::message AnnotationCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {

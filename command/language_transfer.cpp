@@ -15,7 +15,7 @@ namespace command
   std::string LanguageTransferCommand::permission() const
   {
     utils::Logger::instance().debug("LanguageTransferCommand::permission() called");
-    return "command.language_transfer";
+    return "bot.command.language_transfer";
   }
   dpp::message LanguageTransferCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {

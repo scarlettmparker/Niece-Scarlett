@@ -15,7 +15,7 @@ namespace command
   std::string LoveCommand::permission() const
   {
     utils::Logger::instance().debug("LoveCommand::permission() called");
-    return "command.love";
+    return "bot.command.love";
   }
   dpp::message LoveCommand::execute(dpp::cluster &bot, const std::string &cmd, const dpp::message_create_t &event)
   {
