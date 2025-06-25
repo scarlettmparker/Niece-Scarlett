@@ -1,5 +1,4 @@
 #include "role.hpp"
-#include "../utils.hpp"
 
 namespace api::role
 {

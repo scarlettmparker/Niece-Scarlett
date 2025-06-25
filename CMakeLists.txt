@@ -90,6 +90,7 @@ add_executable(GreekUtils
   postgres.cpp
   utils.cpp
   api/annotation.cpp
+  api/level.cpp
   api/role.cpp
   factory/embed_factory.cpp
   factory/direct_message_factory.cpp

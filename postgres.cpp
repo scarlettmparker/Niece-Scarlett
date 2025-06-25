@@ -80,6 +80,9 @@ namespace postgres
                        "JOIN public.\"Status\" s ON u.status = s.id "
                        "WHERE u.discord_id = $1");
 
+    txn.conn().prepare("update_user_levels",
+                       "UPDATE public.\"User\" SET levels = $2 WHERE discord_id = $1");
+
     txn.commit();
     return c;
   }
