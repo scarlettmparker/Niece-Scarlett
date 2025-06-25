@@ -2,22 +2,6 @@
 
 namespace utils
 {
-  std::string to_pg_array_string(const std::vector<std::string> &items)
-  {
-    std::ostringstream oss;
-    oss << '{';
-    for (size_t i = 0; i < items.size(); ++i)
-    {
-      if (i > 0)
-      {
-        oss << ',';
-      }
-      oss << items[i];
-    }
-    oss << '}';
-    return oss.str();
-  }
-
   std::optional<std::string> extract_markdown_image_url(const std::string &markdown)
   {
     std::regex img_regex(R"(\!\[.*\]\((https?://[^\s]+)\))");

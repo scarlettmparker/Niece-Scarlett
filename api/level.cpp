@@ -31,9 +31,7 @@ namespace api::level
     {
       postgres::ConnectionPool &pool = postgres::get_connection_pool();
       auto txn = postgres::begin_transaction(pool);
-
-      std::string levels_array = utils::to_pg_array_string(roles);
-      txn->exec_prepared("update_user_levels", discord_id, levels_array);
+      txn->exec_prepared("update_user_levels", discord_id, roles);
       txn->commit();
 
       utils::Logger::instance().info("Successfully updated levels for Discord ID " + discord_id);

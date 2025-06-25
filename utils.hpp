@@ -15,13 +15,6 @@
 namespace utils
 {
   /**
-   * @brief Converts a vector of strings to a PostgreSQL array string format.
-   * 
-   * @param items Vector of strings to convert.
-   * @return A string formatted as a PostgreSQL array, e.g., '{item1,item2,item3}'.
-   */
-  std::string to_pg_array_string(const std::vector<std::string> &items);
-  /**
    * @brief Extracts the first image URL from markdown image syntax ![alt](url)
    *
    * This function searches the provided markdown text for the syntax used to
