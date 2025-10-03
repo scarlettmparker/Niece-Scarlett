@@ -1,10 +1,4 @@
-import {
-  Channel,
-  TextChannel,
-  NewsChannel,
-  DMChannel,
-  ThreadChannel,
-} from "discord.js";
+import { TextChannel, NewsChannel, DMChannel, ThreadChannel } from "discord.js";
 
 /**
  * Check if a message is sendable in a channel.

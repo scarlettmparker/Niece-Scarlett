@@ -2,6 +2,8 @@ import { readdirSync, statSync } from "fs";
 import * as path from "path";
 import { Command } from "~/types/command";
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 /**
  * Load commands recursively from the commands directory.
  */

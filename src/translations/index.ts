@@ -12,6 +12,8 @@ const cache: Record<string, Translations> = {};
  * @param obj Object to traverse.
  * @param keyPath Key to find.
  */
+// i am NOT typing every translation file json
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getNestedValue(obj: any, keyPath: string): string | undefined {
   return keyPath.split(".").reduce((acc, key) => acc?.[key], obj);
 }
