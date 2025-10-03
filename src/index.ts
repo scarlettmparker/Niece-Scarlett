@@ -1,14 +1,10 @@
 import "dotenv/config";
-import {
-  Client,
-  Collection,
-  GatewayIntentBits,
-  REST,
-  Routes,
-} from "discord.js";
+import { Client, Collection, GatewayIntentBits, Message } from "discord.js";
 import type { ClientType } from "./types/client";
 import { loadCommands } from "./utils/load-commands";
 import type { Command } from "./types/command";
+
+const PREFIX = "niece scarlett";
 
 const client = new Client({
   intents: [
@@ -25,25 +21,16 @@ const commands = loadCommands();
 client.commands = new Collection<string, Command>();
 
 for (const command of commands) {
-  client.commands.set(command.data.name, command);
-}
+  // store by name
+  client.commands.set(command.name, command);
 
-// Register slash commands
-const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN!);
-(async () => {
-  try {
-    console.log("Refreshing application (/) commands...");
-
-    // put application commands
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID ?? ""), {
-      body: commands.map((cmd) => cmd.data.toJSON()),
-    });
-
-    console.log("Reloaded application (/) commands.");
-  } catch (err) {
-    console.error(err);
+  // store by aliases
+  if (command.aliases) {
+    for (const alias of command.aliases) {
+      client.commands.set(alias, command);
+    }
   }
-})();
+}
 
 /**
  * Bot client ready.
@@ -53,25 +40,25 @@ client.on("clientReady", (c) => {
 });
 
 /**
- * Create interactions.
+ * Handle message replies (commands are from messages).
  */
-client.on("interactionCreate", async (interaction) => {
-  // only care about these guys
-  if (!interaction.isChatInputCommand()) return;
+client.on("messageCreate", async (message: Message) => {
+  // because why would the bot do that
+  if (message.author.bot) return;
+  if (!message.content.toLowerCase().startsWith(PREFIX)) return;
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return; // dead
+  const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
+  const commandName = args.shift()?.toLowerCase();
+  if (!commandName) return; // don't give a shit
+
+  const command = client.commands.get(commandName);
+  if (!command) return; // command isn't real anyway
 
   try {
-    await command.execute(interaction);
+    await command.execute(message, args);
   } catch (err) {
-    // something fucked up
     console.error(err);
-    // TODO: translation
-    await interaction.reply({
-      content: "There was an error executing this command.",
-      ephemeral: true,
-    });
+    await message.reply("There was an error executing this command.");
   }
 });
 

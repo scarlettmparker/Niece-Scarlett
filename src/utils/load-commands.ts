@@ -3,7 +3,7 @@ import * as path from "path";
 import { Command } from "~/types/command";
 
 /**
- * Load commands looking recursively into its subfolders
+ * Load commands recursively from the commands directory.
  */
 export function loadCommands(
   dir = path.join(__dirname, "../commands")
@@ -28,7 +28,7 @@ export function loadCommands(
         const commandModule = require(fullPath);
         const command: Command = commandModule.default || commandModule;
 
-        if (command.data) {
+        if (command && command.name && typeof command.execute === "function") {
           commands.push(command);
         }
 
