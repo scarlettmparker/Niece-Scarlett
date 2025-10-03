@@ -1,0 +1,21 @@
+{
+  "message": {
+    "title": "What is Language Transfer?",
+    "body": {
+      "intro": "Language Transfer is an audio series that teaches the basics of Modern Greek in a natural and easy-to-comprehend manner. It focuses on grammar and teaches useful vocabulary to prepare you for everyday conversations.\n\nIt's highly encouraged to check it out, as it will help you build a very solid foundation to communicate in Greek.",
+      "bullets-header": "The complete series can be found on:",
+      "bullets": {
+        "youtube": "YouTube",
+        "soundcloud": "Soundcloud",
+        "transcript": "Transcript (PDF)"
+      },
+      "outro": {
+        "blurb": "The audio series follows the teacher (Mihalis) as he teaches a student useful grammatical constructions and how to form sentences naturally, allowing you to follow along by putting yourself in the student’s shoes",
+        "resources": "More useful resources can be found in",
+        "resources-link": "the resources channel",
+        "resources-continued": ", notably in the pins, to help you advance your Greek level after Language Transfer."
+      }
+    },
+    "footer": "Ανιψιά Σκαρλέτα FAQ"
+  }
+}

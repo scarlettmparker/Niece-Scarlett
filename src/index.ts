@@ -47,15 +47,18 @@ client.on("messageCreate", async (message: Message) => {
   if (message.author.bot) return;
   if (!message.content.toLowerCase().startsWith(PREFIX)) return;
 
-  const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
-  const commandName = args.shift()?.toLowerCase();
-  if (!commandName) return; // don't give a shit
+  const content = message.content.slice(PREFIX.length).trim().toLowerCase();
 
-  const command = client.commands.get(commandName);
+  const command = Array.from(client.commands.values()).find(
+    (cmd) =>
+      cmd.name === content ||
+      cmd.aliases?.some((a) => a.toLowerCase() === content)
+  );
+
   if (!command) return; // command isn't real anyway
 
   try {
-    await command.execute(message, args);
+    await command.execute(message, []);
   } catch (err) {
     console.error(err);
     await message.reply("There was an error executing this command.");
