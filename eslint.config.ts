@@ -4,11 +4,20 @@ const config = [
   ...tseslint.configs.recommended,
 
   {
-    files: ["src/**/*.ts"],
     ignores: ["dist/", "node_modules/"],
+  },
+
+  {
+    files: [
+      "src/**/*.ts",
+      "tests/**/*.ts",
+      "config.ts",
+      "server.ts",
+      "codegen.ts",
+    ],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "commonjs",
+      sourceType: "module",
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [

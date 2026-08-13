@@ -2,13 +2,17 @@
   "name": "niece-scarlett",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "server.ts",
+  "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node .",
+    "start": "tsx server.ts",
     "lint": "npx eslint",
-    "lint:fix": "npx eslint --fix"
+    "lint:fix": "npx eslint --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "graphql:generate": "graphql-codegen --config codegen.ts"
   },
   "repository": {
     "type": "git",
@@ -17,25 +21,30 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/scarlettmparker/Niece-Scarlett/issues"
   },
   "homepage": "https://github.com/scarlettmparker/Niece-Scarlett#readme",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.45.0",
-    "@typescript-eslint/parser": "^8.45.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "@sun/api": "^0.2.7",
+    "@sun/ssr": "^0.5.19",
     "discord.js": "^14.22.1",
     "dotenv": "^17.2.3",
-    "eslint": "^9.37.0",
-    "fs": "^0.0.1-security",
-    "jiti": "^2.6.1",
-    "path": "^0.12.7",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.45.0"
+    "fastify": "^5.9.0",
+    "graphql": "^16.10.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "6.0.1",
+    "@graphql-codegen/client-preset": "5.1.1",
     "@types/node": "^24.6.2",
-    "tsx": "^4.20.6"
+    "eslint": "^9.37.0",
+    "jiti": "^2.6.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.45.0",
+    "vitest": "^2.1.9"
   }
 }

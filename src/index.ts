@@ -1,68 +1,170 @@
-import "dotenv/config";
-import { Client, Collection, GatewayIntentBits, Message } from "discord.js";
-import type { ClientType } from "./types/client";
-import { loadCommands } from "./utils/load-commands";
-import type { Command } from "./types/command";
+import {
+  Client,
+  Collection,
+  GatewayIntentBits,
+  type Interaction,
+  type Message,
+} from "discord.js";
+import { botToken } from "~/config.js";
+import {
+  handleListPage,
+  handleListSelect,
+  isTextListId,
+  isTextListSelectId,
+} from "~/components/text-list.js";
+import { TEXT_VIEWER_PREFIX, handleViewerButton } from "~/components/text-viewer.js";
+import type { ClientType } from "~/types/client.js";
+import type { Command } from "~/types/command.js";
+import { loadCommands } from "~/utils/load-commands.js";
+import { registerCommands } from "~/utils/register-commands.js";
 
-const PREFIX = "niece scarlett";
+const PREFIXES = ["niece scarlett", "ns"];
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds, // dpp default intents
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // dpp i_message_content
-    GatewayIntentBits.GuildMembers, // dpp i_guild_member
-  ],
-}) as ClientType;
-
-// Load commands
-// discord.js docs being for javascript is somewhat irksome
-const commands = loadCommands();
-client.commands = new Collection<string, Command>();
-
-for (const command of commands) {
-  // store by name
-  client.commands.set(command.name, command);
-
-  // store by aliases
-  if (command.aliases) {
-    for (const alias of command.aliases) {
-      client.commands.set(alias, command);
+/**
+ * Extracts the command content after the first matching prefix.
+ *
+ * @param content the message content
+ * @return the content after the prefix, or null when no prefix matches
+ */
+function stripPrefix(content: string): string | null {
+  const lower = content.toLowerCase();
+  for (const prefix of PREFIXES) {
+    if (lower.startsWith(prefix)) {
+      return content.slice(prefix.length).trim();
     }
   }
+  return null;
 }
 
 /**
- * Bot client ready.
+ * Boots the Discord client and logs in.
  */
-client.on("clientReady", (c) => {
-  console.log(`${c.user.username} is online.`);
-});
+export async function bootClient(): Promise<void> {
+  const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds, // dpp default intents
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent, // dpp i_message_content
+      GatewayIntentBits.GuildMembers, // dpp i_guild_member
+    ],
+  }) as ClientType;
+
+  // Load commands
+  const commands = await loadCommands();
+  client.commands = new Collection<string, Command>();
+
+  for (const command of commands) {
+    // store by name
+    client.commands.set(command.name, command);
+
+    // store by aliases
+    if (command.aliases) {
+      for (const alias of command.aliases) {
+        client.commands.set(alias, command);
+      }
+    }
+  }
+
+  /**
+   * Bot client ready.
+   */
+  client.on("clientReady", (c) => {
+    console.log(`${c.user.username} is online.`);
+    registerCommands(client).catch((err) =>
+      console.error("Failed to register slash commands", err)
+    );
+  });
+
+  /**
+   * Handle message replies (commands are from messages).
+   */
+  client.on("messageCreate", async (message: Message) => {
+    // because why would the bot do that
+    if (message.author.bot) return;
+
+    const rest = stripPrefix(message.content);
+    if (rest === null) return;
+
+    const matched = matchCommand(client.commands, rest);
+    if (!matched) return; // command isn't real anyway
+
+    try {
+      await matched.command.messageExecute(message, matched.args);
+    } catch (err) {
+      console.error(err);
+      await message.reply("There was an error executing this command.");
+    }
+  });
+
+  /**
+   * Handle slash commands and their message components.
+   */
+  client.on("interactionCreate", async (interaction: Interaction) => {
+    try {
+      if (interaction.isChatInputCommand()) {
+        const command = client.commands.get(interaction.commandName);
+        if (command?.interactionExecute) {
+          await command.interactionExecute(interaction);
+        }
+        return;
+      }
+
+      if (interaction.isButton()) {
+        if (interaction.customId.startsWith(TEXT_VIEWER_PREFIX)) {
+          await handleViewerButton(interaction);
+        } else if (isTextListId(interaction.customId)) {
+          await handleListPage(interaction);
+        }
+        return;
+      }
+
+      if (interaction.isStringSelectMenu() && isTextListSelectId(interaction.customId)) {
+        await handleListSelect(interaction);
+      }
+    } catch (err) {
+      console.error(err);
+      if (interaction.isRepliable()) {
+        await interaction
+          .reply({ content: "There was an error executing this command.", ephemeral: true })
+          .catch(() => {});
+      }
+    }
+  });
+
+  await client.login(botToken);
+}
+
+interface MatchedCommand {
+  command: Command;
+  args: string[];
+}
 
 /**
- * Handle message replies (commands are from messages).
+ * Resolves the command and its arguments from a prefixed message.
+ *
+ * @param commands the command registry keyed by name and alias
+ * @param content the message content after the prefix
  */
-client.on("messageCreate", async (message: Message) => {
-  // because why would the bot do that
-  if (message.author.bot) return;
-  if (!message.content.toLowerCase().startsWith(PREFIX)) return;
+function matchCommand(
+  commands: Collection<string, Command>,
+  content: string
+): MatchedCommand | null {
+  const lower = content.toLowerCase();
+  let best: { command: Command; key: string } | null = null;
 
-  const content = message.content.slice(PREFIX.length).trim().toLowerCase();
-
-  const command = Array.from(client.commands.values()).find(
-    (cmd) =>
-      cmd.name === content ||
-      cmd.aliases?.some((a) => a.toLowerCase() === content)
-  );
-
-  if (!command) return; // command isn't real anyway
-
-  try {
-    await command.execute(message, []);
-  } catch (err) {
-    console.error(err);
-    await message.reply("There was an error executing this command.");
+  for (const [key, command] of commands) {
+    const keyLower = key.toLowerCase();
+    if (lower === keyLower || lower.startsWith(keyLower + " ")) {
+      if (!best || keyLower.length > best.key.length) {
+        best = { command, key: keyLower };
+      }
+    }
   }
-});
 
-client.login(process.env.BOT_TOKEN);
+  if (!best) return null;
+  const rest = content.slice(best.key.length).trim();
+  return {
+    command: best.command,
+    args: rest.length > 0 ? rest.split(/\s+/) : [],
+  };
+}

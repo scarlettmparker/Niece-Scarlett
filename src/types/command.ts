@@ -1,8 +1,21 @@
-import { Message } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  Message,
+  SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
+} from "discord.js";
+
+export type CommandData =
+  | SlashCommandBuilder
+  | SlashCommandOptionsOnlyBuilder
+  | SlashCommandSubcommandsOnlyBuilder;
 
 export interface Command {
   name: string; // primary command name
   aliases?: string[];
   description?: string;
-  execute: (message: Message, args: string[]) => Promise<void>;
+  data?: CommandData; // slash definition; omit to keep message-only
+  messageExecute: (message: Message, args: string[]) => Promise<void>;
+  interactionExecute?: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }

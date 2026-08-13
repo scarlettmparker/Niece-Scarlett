@@ -1,36 +1,33 @@
 import { readdirSync, statSync } from "fs";
 import * as path from "path";
-import { Command } from "~/types/command";
+import { fileURLToPath, pathToFileURL } from "url";
+import type { Command } from "~/types/command.js";
 
-/* eslint-disable @typescript-eslint/no-require-imports */
+const COMMANDS_DIR = fileURLToPath(new URL("../commands", import.meta.url));
 
 /**
  * Load commands recursively from the commands directory.
+ *
+ * @param dir the directory to scan
  */
-export function loadCommands(
-  dir = path.join(__dirname, "../commands")
-): Command[] {
+export async function loadCommands(dir: string = COMMANDS_DIR): Promise<Command[]> {
   const commands: Command[] = [];
+  const pending = [dir];
 
-  /**
-   * Read commands from a directory.
-   *
-   * @param directory Directory to read
-   */
-  function readCommands(directory: string) {
-    const files = readdirSync(directory);
+  while (pending.length > 0) {
+    const directory = pending.pop()!;
 
-    for (const file of files) {
+    for (const file of readdirSync(directory)) {
       const fullPath = path.join(directory, file);
       const stat = statSync(fullPath);
 
       if (stat.isDirectory()) {
-        readCommands(fullPath); // recurse into folders
+        pending.push(fullPath); // recurse into folders
       } else if (file.endsWith(".ts") || file.endsWith(".js")) {
-        const commandModule = require(fullPath);
-        const command: Command = commandModule.default || commandModule;
+        const commandModule = await import(pathToFileURL(fullPath).href);
+        const command: Command = commandModule.default ?? commandModule;
 
-        if (command && command.name && typeof command.execute === "function") {
+        if (command && command.name && typeof command.messageExecute === "function") {
           commands.push(command);
         }
 
@@ -39,6 +36,5 @@ export function loadCommands(
     }
   }
 
-  readCommands(dir);
   return commands;
 }

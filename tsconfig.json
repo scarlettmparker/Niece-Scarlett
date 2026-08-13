@@ -2,11 +2,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
+      "~/*": ["./src/*"]
     },
     "target": "es2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
     "strict": true,
     "noImplicitAny": true,
     "declaration": false,
@@ -15,6 +16,6 @@
     "resolveJsonModule": true,
     "outDir": "dist"
   },
-  "include": ["src"],
+  "include": ["src", "tests", "config.ts", "server.ts", "codegen.ts", "vitest.config.ts"],
   "exclude": ["node_modules"]
 }

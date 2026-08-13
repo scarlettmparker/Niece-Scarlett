@@ -1,0 +1,16 @@
+query locateText($id: ID!) {
+  hadesQueries {
+    text(id: $id) {
+      id
+      title
+      content
+      language
+      level
+      ownerId
+      sourceId
+      status
+      createdAt
+      updatedAt
+    }
+  }
+}

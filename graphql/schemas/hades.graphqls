@@ -1,0 +1,190 @@
+type ReaderSource {
+  id: String!
+  name: String!
+  url: String!
+}
+
+type ReaderText {
+  id: String!
+  title: String!
+  content: String!
+  language: String!
+  level: CefrLevel!
+  ownerId: ID
+  sourceId: ID
+  status: ReaderTextStatus!
+  createdAt: Date
+  updatedAt: Date
+}
+
+type ReaderPosition {
+  id: String!
+  textId: ID!
+  startOffset: Int!
+  endOffset: Int!
+}
+
+type ReaderAnnotation {
+  id: String!
+  positionId: ID!
+  position: ReaderPosition
+  body: String!
+  status: ReaderStatus!
+  upvotes: Int!
+  downvotes: Int!
+  netScore: Int!
+  replyCount: Int!
+  remoteObject: [String!]
+  author: RemoteUser
+  authorProfile: ReaderAccount
+  myVote: VoteValue
+  createdAt: Date
+  updatedAt: Date
+}
+
+type ReaderComment {
+  id: String!
+  annotationId: ID!
+  parentId: ID
+  body: String!
+  status: ReaderStatus!
+  upvotes: Int!
+  downvotes: Int!
+  netScore: Int!
+  author: RemoteUser
+  authorProfile: ReaderAccount
+  myVote: VoteValue
+  createdAt: Date
+  updatedAt: Date
+}
+
+type ReaderAccount {
+  id: String!
+  gaiaAccountId: ID!
+  discordId: String!
+  discordUsername: String
+  globalName: String
+  avatar: String
+  cefrLevel: CefrLevel
+  roles: [ReaderRole!]!
+}
+
+type ReaderRole {
+  key: String!
+  name: String!
+  cefrLevel: CefrLevel
+}
+
+type PagedReaderTexts {
+  items: [ReaderText!]!
+  pageInfo: PageInfo!
+}
+
+type PagedReaderComments {
+  items: [ReaderComment!]!
+  pageInfo: PageInfo!
+}
+
+type DiscordLoginResult {
+  token: String!
+  accountId: ID!
+  readerAccountId: ID!
+  requiresReactivation: Boolean!
+}
+
+type ReaderObjectReference {
+  id: ID!
+  ownerType: String!
+  ownerId: ID!
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+enum ReaderTextStatus {
+  ACTIVE
+  ARCHIVED
+}
+enum ReaderStatus {
+  ACTIVE
+  HIDDEN
+}
+enum ReaderVoteTarget {
+  ANNOTATION
+  COMMENT
+}
+
+input ReaderTextInput {
+  title: String!
+  content: String!
+  language: String!
+  level: CefrLevel!
+  ownerId: ID
+  sourceId: ID
+}
+
+input AnnotationInput {
+  textId: ID!
+  startOffset: Int!
+  endOffset: Int!
+  body: String!
+}
+
+input CommentInput {
+  annotationId: ID!
+  parentId: ID
+  body: String!
+}
+
+input VoteInput {
+  targetType: ReaderVoteTarget!
+  targetId: ID!
+  value: VoteValue!
+}
+
+type HadesQueries {
+  text(id: ID!): ReaderText
+  source(id: ID!): ReaderSource
+  sources: [ReaderSource!]
+  texts(pagination: PaginationInput): PagedReaderTexts!
+  annotations(textId: ID!, includeHidden: Boolean): [ReaderAnnotation!]!
+  annotation(id: ID!): ReaderAnnotation
+  comments(
+    annotationId: ID!
+    includeHidden: Boolean
+    pagination: PaginationInput
+  ): PagedReaderComments!
+  readerAccount: ReaderAccount
+  readerAccounts(remoteUsers: [RemoteUserInput!]!): [ReaderAccount!]!
+  myVote(targetType: ReaderVoteTarget!, targetId: ID!): VoteValue
+  locateRemoteObjects(ids: [String!]!): [ReaderObjectReference!]!
+}
+
+type HadesMutations {
+  createSource(name: String!, url: String!): QueryResult
+  createText(input: ReaderTextInput!): QueryResult
+  archiveText(id: ID!): QueryResult
+  createAnnotation(input: AnnotationInput!): QueryResult
+  editAnnotation(id: ID!, body: String!): QueryResult
+  deleteAnnotation(id: ID!): QueryResult
+  addComment(input: CommentInput!): QueryResult
+  editComment(id: ID!, body: String!): QueryResult
+  deleteComment(id: ID!): QueryResult
+  vote(input: VoteInput!): QueryResult
+  removeVote(targetType: ReaderVoteTarget!, targetId: ID!): QueryResult
+  attachObject(source: ID!, target: String!): QueryResult
+  discordLogin(code: String!, state: String!): DiscordLoginResult
+}
+
+extend type Query {
+  hadesQueries: HadesQueries!
+}
+
+extend type Mutation {
+  hadesMutations: HadesMutations!
+}
