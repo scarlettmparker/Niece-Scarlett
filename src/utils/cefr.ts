@@ -34,20 +34,28 @@ export function cefrScale(level: CefrLevel): number {
  * @param probabilities the predicted level probabilities
  * @return the weighted label, or null when there is nothing to weigh
  */
-export function weightedLevelLabel(probabilities: LevelProbability[]): string | null {
+export function weightedLevelLabel(
+  probabilities: LevelProbability[],
+): string | null {
   const total = probabilities.reduce((sum, p) => sum + p.probability, 0);
   if (total <= 0) {
     return null;
   }
   const weighted =
-    probabilities.reduce((sum, p) => sum + CEFR_SCALE[p.level] * p.probability, 0) /
-    total;
-  const whole = Math.min(6, Math.max(1, Math.floor(weighted)));
-  const label = CEFR_LABELS[whole];
-  const frac = weighted - whole;
+    probabilities.reduce(
+      (sum, p) => sum + CEFR_SCALE[p.level] * p.probability,
+      0,
+    ) / total;
+  const floor = Math.min(6, Math.max(1, Math.floor(weighted)));
+  const frac = weighted - floor;
   if (frac === 0) {
-    return label;
+    return CEFR_LABELS[floor];
   }
-  const band = frac < 1 / 3 ? "low " : frac < 2 / 3 ? "mid " : "high ";
-  return `${band}${label}`;
+  if (frac < 1 / 3) {
+    return `high ${CEFR_LABELS[floor]}`;
+  }
+  if (frac < 2 / 3) {
+    return `mid ${CEFR_LABELS[floor]}`;
+  }
+  return `low ${CEFR_LABELS[Math.min(6, floor + 1)]}`;
 }
