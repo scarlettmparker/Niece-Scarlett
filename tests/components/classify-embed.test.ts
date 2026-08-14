@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildClassifyEmbed,
-  probabilityBar,
-} from "~/components/classify-embed.js";
+import { buildClassifyEmbed } from "~/components/classify-embed.js";
 import { CefrLevel, type TextLevelAssessment } from "~/generated/graphql.js";
 
 const assessment: TextLevelAssessment = {
@@ -20,23 +17,13 @@ const assessment: TextLevelAssessment = {
   ],
 };
 
-describe("probabilityBar", () => {
-  it("renders the probability as a gauge", () => {
-    expect(probabilityBar(1)).toBe("▰▰▰▰▰");
-    expect(probabilityBar(0)).toBe("▱▱▱▱▱");
-    expect(probabilityBar(0.62)).toBe("▰▰▰▱▱");
-  });
-});
-
 describe("buildClassifyEmbed", () => {
-  it("shows the level, confidence, and top factors", () => {
+  it("shows the weighted estimate, absolute level, and probabilities", () => {
     const embed = buildClassifyEmbed(assessment);
 
-    expect(embed.title).toBe("Estimated level: B2");
-    expect(embed.description).toContain("62%");
+    expect(embed.title).toBe("Estimated level: mid B1");
     expect(embed.description).toContain("B2: 62%");
-    expect(embed.description).toContain("↑ Sentence length");
-    expect(embed.description).toContain("↑ Rare vocabulary");
-    expect(embed.description).toContain("↓ Vocabulary diversity");
+    expect(embed.description).not.toContain("Absolute level");
+    expect(embed.description).not.toContain("Key factors");
   });
 });

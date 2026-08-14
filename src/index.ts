@@ -94,7 +94,7 @@ export async function bootClient(): Promise<void> {
     if (!matched) return; // command isn't real anyway
 
     try {
-      await matched.command.messageExecute(message, matched.args);
+      await matched.command.messageExecute(message, matched.args, matched.intent);
     } catch (err) {
       console.error(err);
       await message.reply("There was an error executing this command.");
@@ -142,6 +142,7 @@ export async function bootClient(): Promise<void> {
 interface MatchedCommand {
   command: Command;
   args: string[];
+  intent?: CommandIntent;
 }
 
 /**
@@ -195,7 +196,7 @@ async function matchIntent(
     if (!command) {
       return null;
     }
-    return { command, args: [] };
+    return { command, args: [content], intent };
   } catch {
     return null;
   }

@@ -4,6 +4,7 @@ import { apiKey, clientId, clientSecret } from "~/config.js";
 import "./data/texts-data.js";
 import "./data/text-data.js";
 import "./data/command-intents-data.js";
+import "./data/command-intent-data.js";
 import "./data/blog-data.js";
 import "./data/language-transfer-data.js";
 

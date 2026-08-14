@@ -5,6 +5,7 @@ import {
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
+import type { CommandIntent } from "~/utils/intents.js";
 
 export type CommandData =
   | SlashCommandBuilder
@@ -16,6 +17,10 @@ export interface Command {
   aliases?: string[];
   description?: string;
   data?: CommandData; // slash definition; omit to keep message-only
-  messageExecute: (message: Message, args: string[]) => Promise<void>;
+  messageExecute: (
+    message: Message,
+    args: string[],
+    intent?: CommandIntent
+  ) => Promise<void>;
   interactionExecute?: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }

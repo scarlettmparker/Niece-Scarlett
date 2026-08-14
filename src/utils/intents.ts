@@ -1,3 +1,6 @@
+import { resolvePageData } from "~/utils/page-data.js";
+import type { QuerySchema } from "~/types/query.js";
+
 export interface CommandIntent {
   /**
    * The intent name.
@@ -11,9 +14,13 @@ export interface CommandIntent {
    * The trigger words that map to this intent.
    */
   words: string[];
+  /**
+   * The natural-language query schema for the command, when queryable.
+   */
+  query?: QuerySchema;
 }
 
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
   "a", "an", "the", "to", "for", "of", "and", "or", "in", "on", "at", "by",
   "give", "me", "my", "your", "please", "what", "whats", "is", "are", "was",
   "how", "do", "does", "did", "i", "you", "we", "they", "can", "could",
@@ -137,4 +144,16 @@ export function resolveIntent(
     }
   }
   return bestScore > 0 ? best : null;
+}
+
+/**
+ * Locates a command's intent, including its query schema when queryable.
+ *
+ * @param command the command name
+ */
+export async function getIntent(command: string): Promise<CommandIntent | undefined> {
+  const intent = await resolvePageData<CommandIntent>("intent", "command-intent/:name", {
+    name: command,
+  });
+  return intent.command === command ? intent : undefined;
 }

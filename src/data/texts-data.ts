@@ -1,13 +1,12 @@
 import { defineLoader } from "@sun/ssr";
 import { executeDocument } from "~/utils/api.js";
 import {
-  FilterOperator,
-  ListTextsDocument,
-  SortDirection,
   type ListTextsQuery,
   type ListTextsQueryVariables,
-  type PaginationInput,
 } from "~/generated/graphql.js";
+import { ListTextsDocument } from "~/generated/graphql.js";
+import { specToPagination } from "~/utils/query-pagination.js";
+import type { QuerySpec } from "~/types/query.js";
 
 const EMPTY_PAGE = {
   items: [],
@@ -22,34 +21,16 @@ const EMPTY_PAGE = {
 };
 
 /**
- * Server-side paginated texts loader with title and level filters.
+ * Server-side paginated texts loader driven by a query spec.
  */
 defineLoader({
   pattern: "texts",
   async loader(params) {
-    const page = Number(params.page ?? 0);
-    const query = params.query as string | undefined;
-    const level = params.level as string | undefined;
-
-    const filters: Array<{
-      field: string;
-      operator: FilterOperator;
-      value: string;
-    }> = [];
-    if (query) {
-      filters.push({ field: "title", operator: FilterOperator.Matches, value: query });
-    }
-    if (level) {
-      filters.push({ field: "level", operator: FilterOperator.In, value: level });
-    }
-
-    const pagination: PaginationInput = {
-      page,
-      size: 10,
-      sortBy: "level",
-      sortDir: SortDirection.Asc,
-      filters: filters.length > 0 ? filters : undefined,
+    const spec = (params.spec as QuerySpec | undefined) ?? {
+      page: 0,
+      filters: [],
     };
+    const pagination = specToPagination(spec, "level");
 
     const result = await executeDocument<ListTextsQuery, ListTextsQueryVariables>(
       ListTextsDocument,

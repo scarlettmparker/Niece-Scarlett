@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import type { APIEmbed } from "discord.js";
 import type { PagedReaderTexts, ReaderText } from "~/generated/graphql.js";
+import type { QuerySpec } from "~/types/query.js";
 import { EmbedMessage } from "./embed.js";
 import { getState, setState, updateState } from "./interaction-state.js";
 import { pageNavRow } from "./pagination-row.js";
@@ -26,17 +27,9 @@ export interface TextListState {
    */
   ownerId: string;
   /**
-   * The title search, when filtering.
+   * The parsed query spec driving the list.
    */
-  query?: string;
-  /**
-   * The CEFR level filter, when set.
-   */
-  level?: string;
-  /**
-   * The zero-based current page.
-   */
-  page: number;
+  spec: QuerySpec;
   /**
    * The total number of pages, refreshed on each fetch.
    */
@@ -58,113 +51,109 @@ interface TextListRender {
  * Shows the interactive text list to a slash command user (ephemeral).
  *
  * @param interaction the command interaction
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
 export async function showTextList(
   interaction: ChatInputCommandInteraction,
-  query?: string,
-  level?: string
+  spec: QuerySpec,
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
-  await sendTextList(interaction, query, level);
+  await sendTextList(interaction, spec);
 }
 
 /**
  * Renders the list into an already-deferred interaction reply.
  *
  * @param interaction the command interaction
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
 export async function showTextListDeferred(
   interaction: ChatInputCommandInteraction,
-  query?: string,
-  level?: string
+  spec: QuerySpec,
 ): Promise<void> {
-  await sendTextList(interaction, query, level);
+  await sendTextList(interaction, spec);
 }
 
 async function sendTextList(
   interaction: ChatInputCommandInteraction,
-  query?: string,
-  level?: string
+  spec: QuerySpec,
 ): Promise<void> {
   const state: TextListState = {
     ownerId: interaction.user.id,
-    query,
-    level,
-    page: 0,
+    spec,
     totalPages: 1,
   };
   const token = setState(state);
   const render = await buildTextList(state, token);
-  await interaction.editReply({ embeds: [render.embed], components: render.components });
+  await interaction.editReply({
+    embeds: [render.embed],
+    components: render.components,
+  });
 }
 
 /**
  * Shows the interactive text list in a message's channel.
  *
  * @param message the message that invoked the command
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
 export async function showTextListMessage(
   message: Message,
-  query?: string,
-  level?: string
+  spec: QuerySpec,
 ): Promise<void> {
   if (!sendable(message.channel)) return;
 
   const state: TextListState = {
     ownerId: message.author.id,
-    query,
-    level,
-    page: 0,
+    spec,
     totalPages: 1,
   };
   const token = setState(state);
   const render = await buildTextList(state, token);
-  await message.channel.send({ embeds: [render.embed], components: render.components });
+  await message.channel.send({
+    embeds: [render.embed],
+    components: render.components,
+  });
 }
 
-async function buildTextList(state: TextListState, token: string): Promise<TextListRender> {
+async function buildTextList(
+  state: TextListState,
+  token: string,
+): Promise<TextListRender> {
   const result = await resolvePageData<PagedReaderTexts>("texts", "texts", {
-    query: state.query,
-    level: state.level,
-    page: state.page,
+    spec: state.spec,
   });
   const texts = result.items;
   const totalPages = Math.max(result.pageInfo.totalPages, 1);
-  const offset = state.page * Math.max(result.pageInfo.size, 1);
+  const offset = state.spec.page * Math.max(result.pageInfo.size, 1);
   updateState<TextListState>(token, { totalPages });
 
   const embed = new EmbedMessage()
-    .setTitle(state.query ? `Texts matching "${state.query}"` : "Texts")
+    .setTitle(state.spec.search ? `Texts matching "${state.spec.search}"` : "Texts")
     .setBody(
       texts.length > 0
         ? texts
             .map(
               (text, index) =>
-                `${offset + index + 1}. **${text.title}** — ${text.level} · ${text.language}`
+                `${offset + index + 1}. **${text.title}** - ${text.level} · ${text.language}`,
             )
             .join("\n")
-        : "No texts found."
+        : "No texts found.",
     )
-    .setFooter(`Page ${state.page + 1}/${totalPages}`)
+    .setFooter(`Page ${state.spec.page + 1}/${totalPages}`)
     .build();
 
   const components: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
   if (texts.length > 0) {
     components.push(selectRow(token, texts));
   }
-  components.push(pageRow(token, state.page, totalPages));
+  components.push(pageRow(token, state.spec.page, totalPages));
   return { embed, components };
 }
 
 function selectRow(
   token: string,
-  texts: ReaderText[]
+  texts: ReaderText[],
 ): ActionRowBuilder<MessageActionRowComponentBuilder> {
   return new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
     new StringSelectMenuBuilder()
@@ -175,15 +164,15 @@ function selectRow(
           label: text.title.slice(0, 100),
           value: text.id,
           description: `${text.level} · ${text.language}`,
-        }))
-      )
+        })),
+      ),
   );
 }
 
 function pageRow(
   token: string,
   page: number,
-  totalPages: number
+  totalPages: number,
 ): ActionRowBuilder<MessageActionRowComponentBuilder> {
   return pageNavRow(LIST_PREFIX, token, page, totalPages);
 }
@@ -223,23 +212,33 @@ export function parseListToken(customId: string): ParsedList | null {
  *
  * @param interaction the button interaction
  */
-export async function handleListPage(interaction: ButtonInteraction): Promise<void> {
+export async function handleListPage(
+  interaction: ButtonInteraction,
+): Promise<void> {
   const parsed = parseListToken(interaction.customId);
   if (!parsed) return;
 
   const state = getState<TextListState>(parsed.token);
   if (!state || state.ownerId !== interaction.user.id) {
-    await interaction.reply({ content: "That message is not yours to control.", ephemeral: true });
+    await interaction.reply({
+      content: "That message is not yours to control.",
+      ephemeral: true,
+    });
     return;
   }
 
-  const next = parsed.direction === "prev" ? state.page - 1 : state.page + 1;
+  const next =
+    parsed.direction === "prev" ? state.spec.page - 1 : state.spec.page + 1;
   if (next < 0 || next >= state.totalPages) return;
 
   await interaction.deferUpdate();
-  updateState<TextListState>(parsed.token, { page: next });
-  const render = await buildTextList({ ...state, page: next }, parsed.token);
-  await interaction.editReply({ embeds: [render.embed], components: render.components });
+  const spec = { ...state.spec, page: next };
+  updateState<TextListState>(parsed.token, { spec });
+  const render = await buildTextList({ ...state, spec }, parsed.token);
+  await interaction.editReply({
+    embeds: [render.embed],
+    components: render.components,
+  });
 }
 
 /**
@@ -247,17 +246,24 @@ export async function handleListPage(interaction: ButtonInteraction): Promise<vo
  *
  * @param interaction the select interaction
  */
-export async function handleListSelect(interaction: StringSelectMenuInteraction): Promise<void> {
+export async function handleListSelect(
+  interaction: StringSelectMenuInteraction,
+): Promise<void> {
   const token = interaction.customId.slice(LIST_SELECT_PREFIX.length + 1);
   const state = getState<TextListState>(token);
   if (!state || state.ownerId !== interaction.user.id) {
-    await interaction.reply({ content: "That message is not yours to control.", ephemeral: true });
+    await interaction.reply({
+      content: "That message is not yours to control.",
+      ephemeral: true,
+    });
     return;
   }
 
   const textId = interaction.values[0];
   await interaction.deferReply({ ephemeral: true });
-  const text = await resolvePageData<ReaderText>("text", "texts/:id", { id: textId });
+  const text = await resolvePageData<ReaderText>("text", "texts/:id", {
+    id: textId,
+  });
   if (!text.id) {
     await interaction.editReply({ content: "That text could not be loaded." });
     return;

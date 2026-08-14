@@ -32,8 +32,11 @@ async function resolveText(term: string): Promise<ResolveResult> {
   }
 
   const result = await resolvePageData<PagedReaderTexts>("texts", "texts", {
-    query: term,
-    page: 0,
+    spec: {
+      page: 0,
+      filters: [{ field: "title", operator: "MATCHES", value: term }],
+      search: term,
+    },
   });
   if (result.items.length > 1) return "multiple";
   if (result.items.length === 1) return result.items[0];
@@ -48,7 +51,11 @@ async function openForInteraction(
 
   const resolved = await resolveText(term);
   if (resolved === "multiple") {
-    await showTextListDeferred(interaction, term);
+    await showTextListDeferred(interaction, {
+      page: 0,
+      filters: [{ field: "title", operator: "MATCHES", value: term }],
+      search: term,
+    });
     return;
   }
   if (!resolved) {
@@ -69,7 +76,11 @@ async function openForMessage(message: Message, term: string): Promise<void> {
 
   const resolved = await resolveText(term);
   if (resolved === "multiple") {
-    await showTextListMessage(message, term);
+    await showTextListMessage(message, {
+      page: 0,
+      filters: [{ field: "title", operator: "MATCHES", value: term }],
+      search: term,
+    });
     return;
   }
   if (!resolved) {
