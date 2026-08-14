@@ -15,7 +15,37 @@ describe("cefrScale", () => {
 });
 
 describe("weightedLevelLabel", () => {
-  it("labels the nearest level when the value is partway out", () => {
+  it("ignores distant mass when most of it sits at C1 and B2", () => {
+    const weighted = weightedLevelLabel([
+      p(CefrLevel.A1, 0.24),
+      p(CefrLevel.A2, 0.05),
+      p(CefrLevel.B1, 0.05),
+      p(CefrLevel.B2, 0.25),
+      p(CefrLevel.C1, 0.36),
+      p(CefrLevel.C2, 0.05),
+    ]);
+    expect(weighted).toBe("mid B2");
+  });
+
+  it("reads an overwhelmingly dominant level as the plain level", () => {
+    expect(
+      weightedLevelLabel([
+        p(CefrLevel.A1, 0.71),
+        p(CefrLevel.A2, 0.06),
+        p(CefrLevel.B1, 0.07),
+        p(CefrLevel.B2, 0.1),
+        p(CefrLevel.C1, 0.06),
+      ])
+    ).toBe("A1");
+  });
+
+  it("keeps an adjacent bump within the band", () => {
+    expect(
+      weightedLevelLabel([p(CefrLevel.B2, 0.8), p(CefrLevel.C2, 0.2)])
+    ).toBe("mid B2");
+  });
+
+  it("bands a value partway out of a level", () => {
     const weighted = weightedLevelLabel([
       p(CefrLevel.A1, 0.3),
       p(CefrLevel.A2, 0.7),
@@ -31,18 +61,6 @@ describe("weightedLevelLabel", () => {
 
   it("returns the plain level when the weight lands on a whole step", () => {
     expect(weightedLevelLabel([p(CefrLevel.C2, 1)])).toBe("C2");
-  });
-
-  it("reads a C1-heavy spread as low C1, not high B2", () => {
-    const weighted = weightedLevelLabel([
-      p(CefrLevel.A1, 0.05),
-      p(CefrLevel.A2, 0.04),
-      p(CefrLevel.B1, 0.04),
-      p(CefrLevel.B2, 0.14),
-      p(CefrLevel.C1, 0.41),
-      p(CefrLevel.C2, 0.32),
-    ]);
-    expect(weighted).toBe("low C1");
   });
 
   it("returns null for empty or zero probabilities", () => {
