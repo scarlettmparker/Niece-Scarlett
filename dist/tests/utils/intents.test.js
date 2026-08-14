@@ -41,4 +41,19 @@ describe("resolveIntent", () => {
     it("returns null when nothing matches", () => {
         expect(resolveIntent("play the guitar", intents)).toBeNull();
     });
+    it("tolerates a typo in the trigger word", () => {
+        expect(resolveIntent("give me textsd", intents)?.command).toBe("texts");
+    });
+    it("tolerates a shortened trigger word", () => {
+        expect(resolveIntent("txts", intents)?.command).toBe("texts");
+    });
+    it("tolerates a typo in a multi-word utterance", () => {
+        expect(resolveIntent("what is langugae transfer", intents)?.command).toBe("lt");
+    });
+    it("prefers an exact match over a fuzzy one", () => {
+        expect(resolveIntent("texts", intents)?.command).toBe("texts");
+    });
+    it("does not match a distant word", () => {
+        expect(resolveIntent("textbooks", intents)).toBeNull();
+    });
 });

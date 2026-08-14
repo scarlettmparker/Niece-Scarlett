@@ -1,0 +1,18 @@
+query classifyTextLevel($text: String!) {
+  hadesQueries {
+    classifyTextLevel(text: $text) {
+      level
+      confidence
+      probabilities {
+        level
+        probability
+      }
+      factors {
+        name
+        value
+        direction
+        weight
+      }
+    }
+  }
+}

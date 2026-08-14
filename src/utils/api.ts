@@ -3,11 +3,14 @@ export type { ApiResponse } from "@sun/api";
 
 import { executeDocument } from "@sun/api";
 import {
+  ClassifyTextLevelDocument,
   FilterOperator,
   ListBlogPostsPagedDocument,
   LocateBlogPostDocument,
   PropertySetDocument,
   SortDirection,
+  type ClassifyTextLevelQuery,
+  type ClassifyTextLevelQueryVariables,
   type ListBlogPostsPagedQuery,
   type ListBlogPostsPagedQueryVariables,
   type LocateBlogPostQuery,
@@ -71,5 +74,17 @@ export async function fetchLocateBlogPost(id: string) {
   return executeDocument<LocateBlogPostQuery, LocateBlogPostQueryVariables>(
     LocateBlogPostDocument,
     { id }
+  );
+}
+
+/**
+ * Predicts the CEFR level of a text.
+ *
+ * @param text the text to classify
+ */
+export async function classifyText(text: string) {
+  return executeDocument<ClassifyTextLevelQuery, ClassifyTextLevelQueryVariables>(
+    ClassifyTextLevelDocument,
+    { text }
   );
 }

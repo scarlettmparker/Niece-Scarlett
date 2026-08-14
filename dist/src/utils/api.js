@@ -1,6 +1,6 @@
 export { executeDocument } from "@sun/api";
 import { executeDocument } from "@sun/api";
-import { FilterOperator, ListBlogPostsPagedDocument, LocateBlogPostDocument, PropertySetDocument, SortDirection, } from "~/generated/graphql.js";
+import { ClassifyTextLevelDocument, FilterOperator, ListBlogPostsPagedDocument, LocateBlogPostDocument, PropertySetDocument, SortDirection, } from "~/generated/graphql.js";
 /**
  * Fetches a property-set entry's values, or all entries when entry is omitted.
  *
@@ -39,4 +39,12 @@ export async function fetchBlogPostsByType(typeName, language) {
  */
 export async function fetchLocateBlogPost(id) {
     return executeDocument(LocateBlogPostDocument, { id });
+}
+/**
+ * Predicts the CEFR level of a text.
+ *
+ * @param text the text to classify
+ */
+export async function classifyText(text) {
+    return executeDocument(ClassifyTextLevelDocument, { text });
 }
