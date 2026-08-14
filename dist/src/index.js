@@ -3,8 +3,25 @@ import { botToken } from "~/config.js";
 import { handleListPage, handleListSelect, isTextListId, isTextListSelectId, } from "~/components/text-list.js";
 import { TEXT_VIEWER_PREFIX, handleViewerButton } from "~/components/text-viewer.js";
 import { loadCommands } from "~/utils/load-commands.js";
+import { resolveIntent } from "~/utils/intents.js";
+import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
-const PREFIX = "niece scarlett";
+const PREFIXES = ["niece scarlett", "ns"];
+/**
+ * Extracts the command content after the first matching prefix.
+ *
+ * @param content the message content
+ * @return the content after the prefix, or null when no prefix matches
+ */
+function stripPrefix(content) {
+    const lower = content.toLowerCase();
+    for (const prefix of PREFIXES) {
+        if (lower.startsWith(prefix)) {
+            return content.slice(prefix.length).trim();
+        }
+    }
+    return null;
+}
 /**
  * Boots the Discord client and logs in.
  */
@@ -44,10 +61,13 @@ export async function bootClient() {
         // because why would the bot do that
         if (message.author.bot)
             return;
-        if (!message.content.toLowerCase().startsWith(PREFIX))
+        const rest = stripPrefix(message.content);
+        if (rest === null)
             return;
-        const content = message.content.slice(PREFIX.length).trim();
-        const matched = matchCommand(client.commands, content);
+        let matched = matchCommand(client.commands, rest);
+        if (!matched) {
+            matched = await matchIntent(client.commands, rest);
+        }
         if (!matched)
             return; // command isn't real anyway
         try {
@@ -118,4 +138,28 @@ function matchCommand(commands, content) {
         command: best.command,
         args: rest.length > 0 ? rest.split(/\s+/) : [],
     };
+}
+/**
+ * Resolves a prefixed message to a command via its intent word cloud.
+ *
+ * @param commands the command registry keyed by name and alias
+ * @param content the message content after the prefix
+ * @return the matched command, or null when no intent matches
+ */
+async function matchIntent(commands, content) {
+    try {
+        const intents = await resolvePageData("intents", "command-intents");
+        const intent = resolveIntent(content, intents);
+        if (!intent) {
+            return null;
+        }
+        const command = commands.get(intent.command);
+        if (!command) {
+            return null;
+        }
+        return { command, args: [] };
+    }
+    catch {
+        return null;
+    }
 }

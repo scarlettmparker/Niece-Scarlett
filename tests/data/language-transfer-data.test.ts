@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { executeDocument } from "@sun/api";
 import "../../src/data/language-transfer-data.js";
-import type { LanguageTransferFaq } from "~/types/faq.js";
+import type { ResolvedFaq } from "~/types/faq.js";
 import { resolvePageData } from "~/utils/page-data.js";
 
 vi.mock("@sun/api", () => ({
@@ -13,30 +13,69 @@ describe("language-transfer loader", () => {
     vi.mocked(executeDocument).mockReset();
   });
 
-  it("returns the faq for a language", async () => {
+  it("renders inline content", async () => {
     vi.mocked(executeDocument).mockResolvedValue({
       success: true,
-      data: { gaiaQueries: { propertySet: { title: "What is Language Transfer?" } } },
+      data: {
+        gaiaQueries: {
+          propertySet: {
+            kind: "content",
+            content: { title: "What is Language Transfer?", intro: "An audio series" },
+          },
+        },
+      },
     });
 
-    const data = await resolvePageData<LanguageTransferFaq>("faq", "language-transfer", {
+    const faq = await resolvePageData<ResolvedFaq>("faq", "language-transfer", {
       language: "en",
     });
 
-    expect(data.title).toBe("What is Language Transfer?");
+    expect(faq.title).toBe("What is Language Transfer?");
+    expect(faq.body).toContain("An audio series");
   });
 
-  it("returns an empty faq when the entry is missing", async () => {
-    vi.mocked(executeDocument).mockResolvedValue({
-      success: false,
-      error: "boom",
-      statusCode: 400,
-    });
+  it("resolves blog-backed content by type and language", async () => {
+    vi.mocked(executeDocument)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          gaiaQueries: {
+            propertySet: { kind: "blog", typeName: "BOT_FAQ", language: "el" },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          blogQueries: {
+            listBlogPosts: {
+              items: [
+                {
+                  id: "1",
+                  title: "Τι είναι το Language Transfer;",
+                  content: "Ελληνικά",
+                  language: "el",
+                  type: null,
+                },
+              ],
+              pageInfo: {
+                page: 0,
+                size: 1,
+                totalPages: 1,
+                totalCount: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+              },
+            },
+          },
+        },
+      });
 
-    const data = await resolvePageData<LanguageTransferFaq>("faq", "language-transfer", {
+    const faq = await resolvePageData<ResolvedFaq>("faq", "language-transfer", {
       language: "el",
     });
 
-    expect(data.title).toBeUndefined();
+    expect(faq.title).toBe("Τι είναι το Language Transfer;");
+    expect(faq.body).toBe("Ελληνικά");
   });
 });

@@ -5,9 +5,14 @@ import { guildId } from "~/config.js";
  * @param client the logged-in client
  */
 export async function registerCommands(client) {
-    const commands = Array.from(client.commands.values())
-        .filter((command) => command.data)
-        .map((command) => command.data);
+    const seen = new Set();
+    const commands = [];
+    for (const command of client.commands.values()) {
+        if (command.data && !seen.has(command.name)) {
+            seen.add(command.name);
+            commands.push(command.data);
+        }
+    }
     if (commands.length === 0)
         return;
     const json = commands.map((command) => command.toJSON());

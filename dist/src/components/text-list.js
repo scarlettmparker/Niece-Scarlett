@@ -16,6 +16,20 @@ const MAX_OPTIONS = 25;
  * @param level optional CEFR level
  */
 export async function showTextList(interaction, query, level) {
+    await interaction.deferReply({ ephemeral: true });
+    await sendTextList(interaction, query, level);
+}
+/**
+ * Renders the list into an already-deferred interaction reply.
+ *
+ * @param interaction the command interaction
+ * @param query optional title search
+ * @param level optional CEFR level
+ */
+export async function showTextListDeferred(interaction, query, level) {
+    await sendTextList(interaction, query, level);
+}
+async function sendTextList(interaction, query, level) {
     const state = {
         ownerId: interaction.user.id,
         query,
@@ -25,7 +39,7 @@ export async function showTextList(interaction, query, level) {
     };
     const token = setState(state);
     const render = await buildTextList(state, token);
-    await interaction.reply({ embeds: [render.embed], components: render.components, ephemeral: true });
+    await interaction.editReply({ embeds: [render.embed], components: render.components });
 }
 /**
  * Shows the interactive text list in a message's channel.
@@ -56,12 +70,13 @@ async function buildTextList(state, token) {
     });
     const texts = result.items;
     const totalPages = Math.max(result.pageInfo.totalPages, 1);
+    const offset = state.page * Math.max(result.pageInfo.size, 1);
     updateState(token, { totalPages });
     const embed = new EmbedMessage()
         .setTitle(state.query ? `Texts matching "${state.query}"` : "Texts")
         .setBody(texts.length > 0
         ? texts
-            .map((text, index) => `${index + 1}. **${text.title}** — ${text.level} · ${text.language}`)
+            .map((text, index) => `${offset + index + 1}. **${text.title}** — ${text.level} · ${text.language}`)
             .join("\n")
         : "No texts found.")
         .setFooter(`Page ${state.page + 1}/${totalPages}`)
@@ -86,15 +101,23 @@ function selectRow(token, texts) {
 function pageRow(token, page, totalPages) {
     return pageNavRow(LIST_PREFIX, token, page, totalPages);
 }
-function parseListToken(customId) {
-    const parts = customId.split(":");
-    if (parts.length !== 3 || parts[0] !== LIST_PREFIX) {
+/**
+ * Reads the token and direction from a list page-button custom id.
+ *
+ * @param customId the button custom id
+ */
+export function parseListToken(customId) {
+    if (!customId.startsWith(`${LIST_PREFIX}:`)) {
         return null;
     }
-    if (parts[2] !== "prev" && parts[2] !== "next") {
+    const parts = customId.slice(`${LIST_PREFIX}:`.length).split(":");
+    if (parts.length !== 2) {
         return null;
     }
-    return { token: parts[1], direction: parts[2] };
+    if (parts[1] !== "prev" && parts[1] !== "next") {
+        return null;
+    }
+    return { token: parts[0], direction: parts[1] };
 }
 /**
  * Handles a text list prev/next button press.
@@ -113,9 +136,10 @@ export async function handleListPage(interaction) {
     const next = parsed.direction === "prev" ? state.page - 1 : state.page + 1;
     if (next < 0 || next >= state.totalPages)
         return;
+    await interaction.deferUpdate();
     updateState(parsed.token, { page: next });
     const render = await buildTextList({ ...state, page: next }, parsed.token);
-    await interaction.update({ embeds: [render.embed], components: render.components });
+    await interaction.editReply({ embeds: [render.embed], components: render.components });
 }
 /**
  * Handles a text pick from the list's select menu.
@@ -130,16 +154,16 @@ export async function handleListSelect(interaction) {
         return;
     }
     const textId = interaction.values[0];
+    await interaction.deferReply({ ephemeral: true });
     const text = await resolvePageData("text", "texts/:id", { id: textId });
     if (!text.id) {
-        await interaction.reply({ content: "That text could not be loaded.", ephemeral: true });
+        await interaction.editReply({ content: "That text could not be loaded." });
         return;
     }
     const viewer = openViewer(text, interaction.user.id);
-    await interaction.reply({
+    await interaction.editReply({
         embeds: [viewerEmbed(viewer.state)],
         components: [viewerRow(viewer.token, 0, viewer.state.pages.length)],
-        ephemeral: true,
     });
 }
 /**

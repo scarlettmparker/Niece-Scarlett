@@ -1,0 +1,24 @@
+query listBlogPostsPaged($pagination: PaginationInput) {
+  blogQueries {
+    listBlogPosts(pagination: $pagination) {
+      items {
+        id
+        title
+        content
+        language
+        type {
+          id
+          name
+        }
+      }
+      pageInfo {
+        page
+        size
+        totalPages
+        totalCount
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+}

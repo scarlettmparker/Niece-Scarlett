@@ -49,14 +49,17 @@ export function viewerRow(token, page, total) {
  * @param customId the button custom id
  */
 export function parseViewerToken(customId) {
-    const parts = customId.split(":");
-    if (parts.length !== 3 || parts[0] !== TEXT_VIEWER_PREFIX) {
+    if (!customId.startsWith(`${TEXT_VIEWER_PREFIX}:`)) {
         return null;
     }
-    if (parts[2] !== "prev" && parts[2] !== "next") {
+    const parts = customId.slice(`${TEXT_VIEWER_PREFIX}:`.length).split(":");
+    if (parts.length !== 2) {
         return null;
     }
-    return { token: parts[1], direction: parts[2] };
+    if (parts[1] !== "prev" && parts[1] !== "next") {
+        return null;
+    }
+    return { token: parts[0], direction: parts[1] };
 }
 /**
  * Handles a viewer prev/next button press.

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, } from "discord.js";
-import { showTextList, showTextListMessage } from "~/components/text-list.js";
+import { showTextListDeferred, showTextListMessage, } from "~/components/text-list.js";
 import { openViewer, viewerEmbed, viewerRow } from "~/components/text-viewer.js";
 import { resolvePageData } from "~/utils/page-data.js";
 import { sendable } from "~/utils/sendable.js";
@@ -28,20 +28,20 @@ async function resolveText(term) {
     return null;
 }
 async function openForInteraction(interaction, term) {
+    await interaction.deferReply({ ephemeral: true });
     const resolved = await resolveText(term);
     if (resolved === "multiple") {
-        await showTextList(interaction, term);
+        await showTextListDeferred(interaction, term);
         return;
     }
     if (!resolved) {
-        await interaction.reply({ content: "No text found.", ephemeral: true });
+        await interaction.editReply({ content: "No text found." });
         return;
     }
     const viewer = openViewer(resolved, interaction.user.id);
-    await interaction.reply({
+    await interaction.editReply({
         embeds: [viewerEmbed(viewer.state)],
         components: [viewerRow(viewer.token, 0, viewer.state.pages.length)],
-        ephemeral: true,
     });
 }
 async function openForMessage(message, term) {

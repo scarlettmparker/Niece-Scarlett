@@ -16,6 +16,8 @@ import { TEXT_VIEWER_PREFIX, handleViewerButton } from "~/components/text-viewer
 import type { ClientType } from "~/types/client.js";
 import type { Command } from "~/types/command.js";
 import { loadCommands } from "~/utils/load-commands.js";
+import { resolveIntent, type CommandIntent } from "~/utils/intents.js";
+import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
 
 const PREFIXES = ["niece scarlett", "ns"];
@@ -85,7 +87,10 @@ export async function bootClient(): Promise<void> {
     const rest = stripPrefix(message.content);
     if (rest === null) return;
 
-    const matched = matchCommand(client.commands, rest);
+    let matched = matchCommand(client.commands, rest);
+    if (!matched) {
+      matched = await matchIntent(client.commands, rest);
+    }
     if (!matched) return; // command isn't real anyway
 
     try {
@@ -167,4 +172,31 @@ function matchCommand(
     command: best.command,
     args: rest.length > 0 ? rest.split(/\s+/) : [],
   };
+}
+
+/**
+ * Resolves a prefixed message to a command via its intent word cloud.
+ *
+ * @param commands the command registry keyed by name and alias
+ * @param content the message content after the prefix
+ * @return the matched command, or null when no intent matches
+ */
+async function matchIntent(
+  commands: Collection<string, Command>,
+  content: string
+): Promise<MatchedCommand | null> {
+  try {
+    const intents = await resolvePageData<CommandIntent[]>("intents", "command-intents");
+    const intent = resolveIntent(content, intents);
+    if (!intent) {
+      return null;
+    }
+    const command = commands.get(intent.command);
+    if (!command) {
+      return null;
+    }
+    return { command, args: [] };
+  } catch {
+    return null;
+  }
 }
