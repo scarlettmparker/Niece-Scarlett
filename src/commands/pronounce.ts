@@ -36,11 +36,16 @@ function audioName(word: string): string {
 const command: Command = {
   name: "pronounce",
   description: "Play the Greek pronunciation of a word",
+  permission: "bot.commands.pronounce",
+  rateLimit: { capacity: 4, refillPerSecond: 0.1 },
   data: new SlashCommandBuilder()
     .setName("pronounce")
     .setDescription("Play the Greek pronunciation of a word")
     .addStringOption((option) =>
-      option.setName("word").setDescription("The word to pronounce").setRequired(true)
+      option
+        .setName("word")
+        .setDescription("The word to pronounce")
+        .setRequired(true),
     ),
   async messageExecute(message, args) {
     const word = args.join(" ").trim();

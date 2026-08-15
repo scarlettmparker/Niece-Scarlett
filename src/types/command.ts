@@ -17,10 +17,14 @@ export interface Command {
   aliases?: string[];
   description?: string;
   data?: CommandData; // slash definition; omit to keep message-only
+  permission?: string; // required permission glob, when access-controlled
+  rateLimit?: { capacity: number; refillPerSecond: number };
   messageExecute: (
     message: Message,
     args: string[],
-    intent?: CommandIntent
+    intent?: CommandIntent,
   ) => Promise<void>;
-  interactionExecute?: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  interactionExecute?: (
+    interaction: ChatInputCommandInteraction,
+  ) => Promise<void>;
 }

@@ -4,13 +4,17 @@ export type { ApiResponse } from "@sun/api";
 import { executeDocument } from "@sun/api";
 import {
   ClassifyTextLevelDocument,
+  EffectivePermissionsDocument,
   FilterOperator,
   ListBlogPostsPagedDocument,
   LocateBlogPostDocument,
   PropertySetDocument,
+  RemoteUserType,
   SortDirection,
   type ClassifyTextLevelQuery,
   type ClassifyTextLevelQueryVariables,
+  type EffectivePermissionsQuery,
+  type EffectivePermissionsQueryVariables,
   type ListBlogPostsPagedQuery,
   type ListBlogPostsPagedQueryVariables,
   type LocateBlogPostQuery,
@@ -29,11 +33,11 @@ import {
 export async function fetchPropertySet(
   ownerKey: string,
   name: string,
-  entry?: string
+  entry?: string,
 ) {
   return executeDocument<PropertySetQuery, PropertySetQueryVariables>(
     PropertySetDocument,
-    { ownerKey, name, entry: entry ?? null }
+    { ownerKey, name, entry: entry ?? null },
   );
 }
 
@@ -45,24 +49,30 @@ export async function fetchPropertySet(
  */
 export async function fetchBlogPostsByType(
   typeName: string,
-  language?: string
+  language?: string,
 ) {
-  const filters = [{ field: "type.name", operator: FilterOperator.Equals, value: typeName }];
+  const filters = [
+    { field: "type.name", operator: FilterOperator.Equals, value: typeName },
+  ];
   if (language) {
-    filters.push({ field: "language", operator: FilterOperator.Equals, value: language });
+    filters.push({
+      field: "language",
+      operator: FilterOperator.Equals,
+      value: language,
+    });
   }
-  return executeDocument<ListBlogPostsPagedQuery, ListBlogPostsPagedQueryVariables>(
-    ListBlogPostsPagedDocument,
-    {
-      pagination: {
-        page: 0,
-        size: 1,
-        sortBy: "createdAt",
-        sortDir: SortDirection.Desc,
-        filters,
-      },
-    }
-  );
+  return executeDocument<
+    ListBlogPostsPagedQuery,
+    ListBlogPostsPagedQueryVariables
+  >(ListBlogPostsPagedDocument, {
+    pagination: {
+      page: 0,
+      size: 1,
+      sortBy: "createdAt",
+      sortDir: SortDirection.Desc,
+      filters,
+    },
+  });
 }
 
 /**
@@ -73,7 +83,7 @@ export async function fetchBlogPostsByType(
 export async function fetchLocateBlogPost(id: string) {
   return executeDocument<LocateBlogPostQuery, LocateBlogPostQueryVariables>(
     LocateBlogPostDocument,
-    { id }
+    { id },
   );
 }
 
@@ -83,8 +93,23 @@ export async function fetchLocateBlogPost(id: string) {
  * @param text the text to classify
  */
 export async function classifyText(text: string) {
-  return executeDocument<ClassifyTextLevelQuery, ClassifyTextLevelQueryVariables>(
-    ClassifyTextLevelDocument,
-    { text }
-  );
+  return executeDocument<
+    ClassifyTextLevelQuery,
+    ClassifyTextLevelQueryVariables
+  >(ClassifyTextLevelDocument, { text });
+}
+
+/**
+ * Fetches a Discord account's effective permission patterns.
+ *
+ * @param discordId the Discord user id
+ */
+export async function fetchEffectivePermissions(discordId: string) {
+  return executeDocument<
+    EffectivePermissionsQuery,
+    EffectivePermissionsQueryVariables
+  >(EffectivePermissionsDocument, {
+    remoteUserType: RemoteUserType.Discord,
+    remoteUserId: discordId,
+  });
 }

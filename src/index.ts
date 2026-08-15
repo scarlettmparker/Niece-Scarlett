@@ -12,11 +12,15 @@ import {
   isTextListId,
   isTextListSelectId,
 } from "~/components/text-list.js";
-import { TEXT_VIEWER_PREFIX, handleViewerButton } from "~/components/text-viewer.js";
+import {
+  TEXT_VIEWER_PREFIX,
+  handleViewerButton,
+} from "~/components/text-viewer.js";
 import type { ClientType } from "~/types/client.js";
 import type { Command } from "~/types/command.js";
 import { loadCommands } from "~/utils/load-commands.js";
 import { resolveIntent, type CommandIntent } from "~/utils/intents.js";
+import { canRun, checkRateLimit } from "~/utils/access.js";
 import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
 
@@ -36,6 +40,40 @@ function stripPrefix(content: string): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Checks a command's rate limit and permission before it runs.
+ *
+ * @param userId the requesting user's id
+ * @param command the command being invoked
+ * @param deny how to refuse the invocation
+ * @return whether execution may proceed
+ */
+async function assertCommandAccess(
+  userId: string,
+  command: Command,
+  deny: (content: string) => Promise<unknown>,
+): Promise<boolean> {
+  if (!command.permission && !command.rateLimit) {
+    return true;
+  }
+  if (command.rateLimit) {
+    const result = checkRateLimit(
+      `${userId}:${command.name}`,
+      command.rateLimit.capacity,
+      command.rateLimit.refillPerSecond,
+    );
+    if (!result.allowed) {
+      await deny(`You're going too fast. Try again in ${result.retryAfter}s.`);
+      return false;
+    }
+  }
+  if (command.permission && !(await canRun(userId, command.permission))) {
+    await deny("You don't have permission to run this command.");
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -73,7 +111,7 @@ export async function bootClient(): Promise<void> {
   client.on("clientReady", (c) => {
     console.log(`${c.user.username} is online.`);
     registerCommands(client).catch((err) =>
-      console.error("Failed to register slash commands", err)
+      console.error("Failed to register slash commands", err),
     );
   });
 
@@ -94,7 +132,18 @@ export async function bootClient(): Promise<void> {
     if (!matched) return; // command isn't real anyway
 
     try {
-      await matched.command.messageExecute(message, matched.args, matched.intent);
+      const allowed = await assertCommandAccess(
+        message.author.id,
+        matched.command,
+        (content) => message.reply(content),
+      );
+      if (allowed) {
+        await matched.command.messageExecute(
+          message,
+          matched.args,
+          matched.intent,
+        );
+      }
     } catch (err) {
       console.error(err);
       await message.reply("There was an error executing this command.");
@@ -109,7 +158,14 @@ export async function bootClient(): Promise<void> {
       if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (command?.interactionExecute) {
-          await command.interactionExecute(interaction);
+          const allowed = await assertCommandAccess(
+            interaction.user.id,
+            command,
+            (content) => interaction.reply({ content, ephemeral: true }),
+          );
+          if (allowed) {
+            await command.interactionExecute(interaction);
+          }
         }
         return;
       }
@@ -123,14 +179,20 @@ export async function bootClient(): Promise<void> {
         return;
       }
 
-      if (interaction.isStringSelectMenu() && isTextListSelectId(interaction.customId)) {
+      if (
+        interaction.isStringSelectMenu() &&
+        isTextListSelectId(interaction.customId)
+      ) {
         await handleListSelect(interaction);
       }
     } catch (err) {
       console.error(err);
       if (interaction.isRepliable()) {
         await interaction
-          .reply({ content: "There was an error executing this command.", ephemeral: true })
+          .reply({
+            content: "There was an error executing this command.",
+            ephemeral: true,
+          })
           .catch(() => {});
       }
     }
@@ -153,7 +215,7 @@ interface MatchedCommand {
  */
 function matchCommand(
   commands: Collection<string, Command>,
-  content: string
+  content: string,
 ): MatchedCommand | null {
   const lower = content.toLowerCase();
   let best: { command: Command; key: string } | null = null;
@@ -184,10 +246,13 @@ function matchCommand(
  */
 async function matchIntent(
   commands: Collection<string, Command>,
-  content: string
+  content: string,
 ): Promise<MatchedCommand | null> {
   try {
-    const intents = await resolvePageData<CommandIntent[]>("intents", "command-intents");
+    const intents = await resolvePageData<CommandIntent[]>(
+      "intents",
+      "command-intents",
+    );
     const intent = resolveIntent(content, intents);
     if (!intent) {
       return null;

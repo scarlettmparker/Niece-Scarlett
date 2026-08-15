@@ -14,7 +14,9 @@ import { sendable } from "~/utils/sendable.js";
  */
 async function runFor(text: string): Promise<TextLevelAssessment | null> {
   const result = await classifyText(text);
-  return result.success ? (result.data?.hadesQueries.classifyTextLevel ?? null) : null;
+  return result.success
+    ? (result.data?.hadesQueries.classifyTextLevel ?? null)
+    : null;
 }
 
 /**
@@ -23,7 +25,10 @@ async function runFor(text: string): Promise<TextLevelAssessment | null> {
  * @param args the command arguments
  * @param hasReply whether the message replies to another message
  */
-export function classifyTarget(args: string[], hasReply: boolean): "inline" | "reply" | null {
+export function classifyTarget(
+  args: string[],
+  hasReply: boolean,
+): "inline" | "reply" | null {
   if (args.length > 0) {
     return "inline";
   }
@@ -63,11 +68,16 @@ const command: Command = {
   name: "classify",
   aliases: ["level", "cefr"],
   description: "Predict the CEFR level of a text",
+  permission: "bot.commands.classify",
+  rateLimit: { capacity: 5, refillPerSecond: 0.25 },
   data: new SlashCommandBuilder()
     .setName("classify")
     .setDescription("Predict the CEFR level of a text")
     .addStringOption((option) =>
-      option.setName("text").setDescription("The text to classify").setRequired(true)
+      option
+        .setName("text")
+        .setDescription("The text to classify")
+        .setRequired(true),
     ),
   async messageExecute(message, args) {
     const channel = message.channel;
@@ -75,10 +85,13 @@ const command: Command = {
 
     const target = classifyTarget(args, message.reference != null);
     if (target === null) {
-      await message.reply("Reply to a message with `ns classify`, or use `ns classify <text>`.");
+      await message.reply(
+        "Reply to a message with `ns classify`, or use `ns classify <text>`.",
+      );
       return;
     }
-    const text = target === "inline" ? args.join(" ") : await repliedContent(message);
+    const text =
+      target === "inline" ? args.join(" ") : await repliedContent(message);
     if (!text) {
       await message.reply("That message has no text to classify.");
       return;
@@ -97,7 +110,9 @@ const command: Command = {
 
     const assessment = await runFor(text);
     if (!assessment) {
-      await interaction.editReply({ content: "The CEFR classifier is unavailable." });
+      await interaction.editReply({
+        content: "The CEFR classifier is unavailable.",
+      });
       return;
     }
     await interaction.editReply({ embeds: [buildClassifyEmbed(assessment)] });
@@ -105,4 +120,3 @@ const command: Command = {
 };
 
 export default command;
-

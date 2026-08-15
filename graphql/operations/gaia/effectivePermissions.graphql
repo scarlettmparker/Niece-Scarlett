@@ -1,0 +1,11 @@
+query effectivePermissions(
+  $remoteUserType: RemoteUserType!
+  $remoteUserId: String!
+) {
+  gaiaQueries {
+    effectivePermissions(
+      remoteUserType: $remoteUserType
+      remoteUserId: $remoteUserId
+    )
+  }
+}

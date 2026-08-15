@@ -28,6 +28,7 @@ type GaiaQueries {
   myRoles: [String!]!
   account(id: ID!): Account
   accounts(pagination: PaginationInput): PagedAccounts!
+  effectivePermissions(remoteUserType: RemoteUserType!, remoteUserId: String!): [String!]!
 }
 
 input LoginInput {
