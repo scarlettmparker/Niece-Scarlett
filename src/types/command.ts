@@ -12,19 +12,27 @@ export type CommandData =
   | SlashCommandOptionsOnlyBuilder
   | SlashCommandSubcommandsOnlyBuilder;
 
+import type { RateLimitConfig } from "~/utils/command-config.js";
+
 export interface Command {
-  name: string; // primary command name
+  // primary command name
+  name: string;
   aliases?: string[];
   description?: string;
-  data?: CommandData; // slash definition; omit to keep message-only
-  permission?: string; // required permission glob, when access-controlled
-  rateLimit?: { capacity: number; refillPerSecond: number };
+  // slash definition; omit to keep message-only
+  data?: CommandData;
+  // required permission glob, when access-controlled
+  permission?: string;
+  // global limit, with optional per-channel overrides
+  rateLimit?: RateLimitConfig;
+  // true when the underlying fetch succeeded
   messageExecute: (
     message: Message,
     args: string[],
-    intent?: CommandIntent
-  ) => Promise<boolean | void>; // true when the underlying fetch succeeded
+    intent?: CommandIntent,
+  ) => Promise<boolean | void>;
+  // true when the underlying fetch succeeded
   interactionExecute?: (
-    interaction: ChatInputCommandInteraction
-  ) => Promise<boolean | void>; // true when the underlying fetch succeeded
+    interaction: ChatInputCommandInteraction,
+  ) => Promise<boolean | void>;
 }

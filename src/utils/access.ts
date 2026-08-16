@@ -83,6 +83,10 @@ class TokenBucket {
     this.tokens = capacity;
   }
 
+  matches(capacity: number, refillPerSecond: number): boolean {
+    return this.capacity === capacity && this.refillPerSecond === refillPerSecond;
+  }
+
   tryConsume(): boolean {
     this.refill();
     if (this.tokens < 1) {
@@ -116,12 +120,13 @@ class TokenBucket {
 const BUCKETS = new Map<string, TokenBucket>();
 
 function bucket(key: string, capacity: number, refillPerSecond: number): TokenBucket {
-  let found = BUCKETS.get(key);
-  if (!found) {
-    found = new TokenBucket(capacity, refillPerSecond);
-    BUCKETS.set(key, found);
+  const existing = BUCKETS.get(key);
+  if (existing && existing.matches(capacity, refillPerSecond)) {
+    return existing;
   }
-  return found;
+  const created = new TokenBucket(capacity, refillPerSecond);
+  BUCKETS.set(key, created);
+  return created;
 }
 
 /**

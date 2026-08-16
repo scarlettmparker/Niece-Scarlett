@@ -21,6 +21,10 @@ import type { Command } from "~/types/command.js";
 import { loadCommands } from "~/utils/load-commands.js";
 import { resolveIntent, type CommandIntent } from "~/utils/intents.js";
 import { canRun, refundRateLimit, reserveRateLimit } from "~/utils/access.js";
+import {
+  effectiveCommandConfig,
+  rateLimitFor,
+} from "~/utils/command-config.js";
 import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
 
@@ -50,34 +54,39 @@ function stripPrefix(content: string): string | null {
  *
  * @param userId the requesting user's id
  * @param command the command being invoked
+ * @param channelId the discord channel id
  * @param deny how to refuse the invocation
  * @return whether execution may proceed
  */
 async function assertCommandAccess(
   userId: string,
   command: Command,
+  channelId: string,
   deny: (content: string) => Promise<unknown>,
 ): Promise<boolean> {
-  if (!command.permission && !command.rateLimit) {
-    return true;
-  }
-  if (command.rateLimit) {
+  const config = await effectiveCommandConfig(command);
+  const rateLimit = rateLimitFor(config, channelId);
+  if (rateLimit) {
+    if (rateLimit.capacity === 0) {
+      await deny("This command is not available in this channel.");
+      return false;
+    }
     const result = reserveRateLimit(
-      `${userId}:${command.name}`,
-      command.rateLimit.capacity,
-      command.rateLimit.refillPerSecond,
+      `${userId}:${command.name}:${channelId}`,
+      rateLimit.capacity,
+      rateLimit.refillPerSecond,
     );
     if (!result.allowed) {
       await deny(`You're going too fast. Try again in ${result.retryAfter}s.`);
       return false;
     }
   }
-  if (command.permission && !(await canRun(userId, command.permission))) {
-    if (command.rateLimit) {
+  if (config.permission && !(await canRun(userId, config.permission))) {
+    if (rateLimit) {
       refundRateLimit(
-        `${userId}:${command.name}`,
-        command.rateLimit.capacity,
-        command.rateLimit.refillPerSecond,
+        `${userId}:${command.name}:${channelId}`,
+        rateLimit.capacity,
+        rateLimit.refillPerSecond,
       );
     }
     await deny("You don't have permission to run this command.");
@@ -91,28 +100,43 @@ async function assertCommandAccess(
  *
  * @param command the command that ran
  * @param userId the requesting user's id
+ * @param channelId the discord channel id
  * @param ok whether the command's fetch succeeded
  */
-function settleRateLimit(command: Command, userId: string, ok: boolean | void) {
-  if (command.rateLimit && !ok) {
+async function settleRateLimit(
+  command: Command,
+  userId: string,
+  channelId: string,
+  ok: boolean | void,
+) {
+  const config = await effectiveCommandConfig(command);
+  const rateLimit = rateLimitFor(config, channelId);
+  if (rateLimit && !ok) {
     refundRateLimit(
-      `${userId}:${command.name}`,
-      command.rateLimit.capacity,
-      command.rateLimit.refillPerSecond,
+      `${userId}:${command.name}:${channelId}`,
+      rateLimit.capacity,
+      rateLimit.refillPerSecond,
     );
   }
 }
 
 /**
  * Boots the Discord client and logs in.
+ *
+ * @note I originally wrote this bot in C++ using DPP,
+ * hence the random "dpp" comments here. Not sure why
+ * I haven't removed it. Don't want to out of pride now.
  */
 export async function bootClient(): Promise<void> {
   const client = new Client({
     intents: [
-      GatewayIntentBits.Guilds, // dpp default intents
+      // dpp default intents
+      GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent, // dpp i_message_content
-      GatewayIntentBits.GuildMembers, // dpp i_guild_member
+      // dpp i_message_content
+      GatewayIntentBits.MessageContent,
+      // dpp i_guild_member
+      GatewayIntentBits.GuildMembers,
     ],
   }) as ClientType;
 
@@ -156,12 +180,15 @@ export async function bootClient(): Promise<void> {
     if (!matched) {
       matched = await matchIntent(client.commands, rest);
     }
-    if (!matched) return; // command isn't real anyway
+
+    // command isn't real anyway hence we say nothing
+    if (!matched) return;
 
     try {
       const allowed = await assertCommandAccess(
         message.author.id,
         matched.command,
+        message.channelId,
         (content) => message.reply(content),
       );
       if (allowed) {
@@ -170,7 +197,12 @@ export async function bootClient(): Promise<void> {
           matched.args,
           matched.intent,
         );
-        settleRateLimit(matched.command, message.author.id, ok);
+        settleRateLimit(
+          matched.command,
+          message.author.id,
+          message.channelId,
+          ok,
+        );
       }
     } catch (err) {
       console.error(err);
@@ -189,11 +221,17 @@ export async function bootClient(): Promise<void> {
           const allowed = await assertCommandAccess(
             interaction.user.id,
             command,
+            interaction.channelId,
             (content) => interaction.reply({ content, ephemeral: true }),
           );
           if (allowed) {
             const ok = await command.interactionExecute(interaction);
-            settleRateLimit(command, interaction.user.id, ok);
+            settleRateLimit(
+              command,
+              interaction.user.id,
+              interaction.channelId,
+              ok,
+            );
           }
         }
         return;
@@ -231,8 +269,17 @@ export async function bootClient(): Promise<void> {
 }
 
 interface MatchedCommand {
+  /**
+   * Matched command from the registry.
+   */
   command: Command;
+  /**
+   * Arguments after the command name.
+   */
   args: string[];
+  /**
+   * Intent that matched the command, if any.
+   */
   intent?: CommandIntent;
 }
 

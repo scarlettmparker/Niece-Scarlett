@@ -53,4 +53,17 @@ describe("reserveRateLimit", () => {
     refundRateLimit("user2:cmd", 1, 0.1);
     expect(reserveRateLimit("user2:cmd", 1, 0.1).allowed).toBe(true);
   });
+
+  it("denies a key with capacity zero", () => {
+    expect(reserveRateLimit("user4:cmd", 0, 1).allowed).toBe(false);
+    expect(reserveRateLimit("user4:cmd", 0, 1).retryAfter).toBeGreaterThan(0);
+    expect(reserveRateLimit("user5:cmd", 1, 1).allowed).toBe(true);
+  });
+
+  it("replaces the bucket when the config changes", () => {
+    reserveRateLimit("user3:cmd", 1, 0.1);
+    expect(reserveRateLimit("user3:cmd", 1, 0.1).allowed).toBe(false);
+    expect(reserveRateLimit("user3:cmd", 2, 0.1).allowed).toBe(true);
+    expect(reserveRateLimit("user3:cmd", 2, 0.1).allowed).toBe(true);
+  });
 });
