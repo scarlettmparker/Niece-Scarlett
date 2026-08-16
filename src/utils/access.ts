@@ -83,13 +83,18 @@ class TokenBucket {
     this.tokens = capacity;
   }
 
-  tryAcquire(): boolean {
+  tryConsume(): boolean {
     this.refill();
     if (this.tokens < 1) {
       return false;
     }
     this.tokens -= 1;
     return true;
+  }
+
+  refund() {
+    this.refill();
+    this.tokens = Math.min(this.capacity, this.tokens + 1);
   }
 
   retryAfterSeconds(): number {
@@ -110,26 +115,46 @@ class TokenBucket {
 
 const BUCKETS = new Map<string, TokenBucket>();
 
+function bucket(key: string, capacity: number, refillPerSecond: number): TokenBucket {
+  let found = BUCKETS.get(key);
+  if (!found) {
+    found = new TokenBucket(capacity, refillPerSecond);
+    BUCKETS.set(key, found);
+  }
+  return found;
+}
+
 /**
- * Consumes a token from the bucket for a key, creating it on first use.
+ * Reserves a token for a key, consuming it atomically when available.
  *
  * @param key the bucket key
  * @param capacity the bucket's maximum burst size
  * @param refillPerSecond tokens restored per second
  * @return the outcome, including how long to wait when denied
  */
-export function checkRateLimit(
+export function reserveRateLimit(
   key: string,
   capacity: number,
   refillPerSecond: number,
 ): { allowed: boolean; retryAfter: number } {
-  let bucket = BUCKETS.get(key);
-  if (!bucket) {
-    bucket = new TokenBucket(capacity, refillPerSecond);
-    BUCKETS.set(key, bucket);
-  }
-  if (bucket.tryAcquire()) {
+  const found = bucket(key, capacity, refillPerSecond);
+  if (found.tryConsume()) {
     return { allowed: true, retryAfter: 0 };
   }
-  return { allowed: false, retryAfter: bucket.retryAfterSeconds() };
+  return { allowed: false, retryAfter: found.retryAfterSeconds() };
+}
+
+/**
+ * Returns a reserved token when the attempt it backed failed.
+ *
+ * @param key the bucket key
+ * @param capacity the bucket's maximum burst size
+ * @param refillPerSecond tokens restored per second
+ */
+export function refundRateLimit(
+  key: string,
+  capacity: number,
+  refillPerSecond: number,
+): void {
+  bucket(key, capacity, refillPerSecond).refund();
 }

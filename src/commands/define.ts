@@ -102,7 +102,8 @@ const command: Command = {
   name: "define",
   aliases: ["meaning", "dictionary"],
   description: "Define a Greek word from WordReference",
-  rateLimit: { capacity: 4, refillPerSecond: 0.1 },
+  permission: "bot.commands.define",
+  rateLimit: { capacity: 1, refillPerSecond: 0.1 },
   data: new SlashCommandBuilder()
     .setName("define")
     .setDescription("Define a Greek word from WordReference")
@@ -125,19 +126,24 @@ const command: Command = {
       await message.reply(
         "Usage: `ns define <word> [with examples, all translations, compounds, related]`",
       );
-      return;
+      return false;
     }
     const channel = message.channel;
-    if (!sendable(channel)) return;
+    if (!sendable(channel)) return false;
 
     const scope = parseDefineScope(scopeText);
     const result = await fetchDefineWord(word, scope);
-    const def = result.success ? result.data?.hadesQueries.defineWord : null;
+    if (!result.success) {
+      await message.reply("That entry does not exist.");
+      return false;
+    }
+    const def = result.data?.hadesQueries.defineWord;
     if (!def || (def.entries.length === 0 && def.compounds.length === 0)) {
       await message.reply("That entry does not exist.");
-      return;
+      return true;
     }
     await channel.send({ embeds: [defineEmbed(def)] });
+    return true;
   },
   async interactionExecute(interaction) {
     const word = interaction.options.getString("word", true).trim();
@@ -146,12 +152,17 @@ const command: Command = {
 
     const scope = parseDefineScope(scopeText);
     const result = await fetchDefineWord(word, scope);
-    const def = result.success ? result.data?.hadesQueries.defineWord : null;
+    if (!result.success) {
+      await interaction.editReply({ content: "That entry does not exist." });
+      return false;
+    }
+    const def = result.data?.hadesQueries.defineWord;
     if (!def || (def.entries.length === 0 && def.compounds.length === 0)) {
       await interaction.editReply({ content: "That entry does not exist." });
-      return;
+      return true;
     }
     await interaction.editReply({ embeds: [defineEmbed(def)] });
+    return true;
   },
 };
 

@@ -20,7 +20,7 @@ import type { ClientType } from "~/types/client.js";
 import type { Command } from "~/types/command.js";
 import { loadCommands } from "~/utils/load-commands.js";
 import { resolveIntent, type CommandIntent } from "~/utils/intents.js";
-import { canRun, checkRateLimit } from "~/utils/access.js";
+import { canRun, refundRateLimit, reserveRateLimit } from "~/utils/access.js";
 import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
 
@@ -43,7 +43,10 @@ function stripPrefix(content: string): string | null {
 }
 
 /**
- * Checks a command's rate limit and permission before it runs.
+ * Reserves a rate-limit token and checks permission before a command runs.
+ *
+ * The token is refunded when the command's fetch fails (see settleRateLimit)
+ * or when the permission check denies the invocation.
  *
  * @param userId the requesting user's id
  * @param command the command being invoked
@@ -59,7 +62,7 @@ async function assertCommandAccess(
     return true;
   }
   if (command.rateLimit) {
-    const result = checkRateLimit(
+    const result = reserveRateLimit(
       `${userId}:${command.name}`,
       command.rateLimit.capacity,
       command.rateLimit.refillPerSecond,
@@ -70,10 +73,34 @@ async function assertCommandAccess(
     }
   }
   if (command.permission && !(await canRun(userId, command.permission))) {
+    if (command.rateLimit) {
+      refundRateLimit(
+        `${userId}:${command.name}`,
+        command.rateLimit.capacity,
+        command.rateLimit.refillPerSecond,
+      );
+    }
     await deny("You don't have permission to run this command.");
     return false;
   }
   return true;
+}
+
+/**
+ * Refunds the reserved token when the command's fetch failed.
+ *
+ * @param command the command that ran
+ * @param userId the requesting user's id
+ * @param ok whether the command's fetch succeeded
+ */
+function settleRateLimit(command: Command, userId: string, ok: boolean | void) {
+  if (command.rateLimit && !ok) {
+    refundRateLimit(
+      `${userId}:${command.name}`,
+      command.rateLimit.capacity,
+      command.rateLimit.refillPerSecond,
+    );
+  }
 }
 
 /**
@@ -138,11 +165,12 @@ export async function bootClient(): Promise<void> {
         (content) => message.reply(content),
       );
       if (allowed) {
-        await matched.command.messageExecute(
+        const ok = await matched.command.messageExecute(
           message,
           matched.args,
           matched.intent,
         );
+        settleRateLimit(matched.command, message.author.id, ok);
       }
     } catch (err) {
       console.error(err);
@@ -164,7 +192,8 @@ export async function bootClient(): Promise<void> {
             (content) => interaction.reply({ content, ephemeral: true }),
           );
           if (allowed) {
-            await command.interactionExecute(interaction);
+            const ok = await command.interactionExecute(interaction);
+            settleRateLimit(command, interaction.user.id, ok);
           }
         }
         return;

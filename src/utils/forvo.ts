@@ -25,6 +25,9 @@ const PLAY_ARG_RE = /'([^']*)'/g;
 
 const CHALLENGE_MARKERS = ["Just a moment"];
 
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000;
+
 /**
  * Curl flags that reproduce a desktop browser so Cloudflare serves the page.
  */
@@ -104,16 +107,19 @@ export function greekAudioUrl(html: string): string | null {
 }
 
 /**
- * Fetches a word's page, or null when the word does not resolve.
+ * Fetches a word's page, retrying past transient Cloudflare challenges.
  *
  * @param word the word to look up
  */
 export async function fetchWordPage(word: string): Promise<string | null> {
-  const html = await curlText(wordPageUrl(word));
-  if (!html || CHALLENGE_MARKERS.some((marker) => html.includes(marker))) {
-    return null;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const html = await curlText(wordPageUrl(word));
+    if (html && !CHALLENGE_MARKERS.some((marker) => html.includes(marker))) {
+      return html;
+    }
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
   }
-  return html;
+  return null;
 }
 
 /**

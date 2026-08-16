@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { checkRateLimit, matchPermission } from "~/utils/access.js";
+import {
+  matchPermission,
+  refundRateLimit,
+  reserveRateLimit,
+} from "~/utils/access.js";
 
 describe("matchPermission", () => {
   it("matches an exact permission", () => {
@@ -36,19 +40,17 @@ describe("matchPermission", () => {
   });
 });
 
-describe("checkRateLimit", () => {
-  it("allows the bucket's capacity up front", () => {
-    const first = checkRateLimit("user:cmd", 2, 1);
-    const second = checkRateLimit("user:cmd", 2, 1);
-    const third = checkRateLimit("user:cmd", 2, 1);
-    expect(first.allowed).toBe(true);
-    expect(second.allowed).toBe(true);
-    expect(third.allowed).toBe(false);
-    expect(third.retryAfter).toBeGreaterThan(0);
+describe("reserveRateLimit", () => {
+  it("allows one attempt per refill window", () => {
+    expect(reserveRateLimit("user:cmd", 1, 0.1).allowed).toBe(true);
+    const denied = reserveRateLimit("user:cmd", 1, 0.1);
+    expect(denied.allowed).toBe(false);
+    expect(denied.retryAfter).toBeGreaterThan(0);
   });
 
-  it("refills tokens over time", () => {
-    checkRateLimit("user2:cmd", 1, 1);
-    expect(checkRateLimit("user2:cmd", 1, 1).allowed).toBe(false);
+  it("refunds a token so a failed attempt does not count", () => {
+    reserveRateLimit("user2:cmd", 1, 0.1);
+    refundRateLimit("user2:cmd", 1, 0.1);
+    expect(reserveRateLimit("user2:cmd", 1, 0.1).allowed).toBe(true);
   });
 });

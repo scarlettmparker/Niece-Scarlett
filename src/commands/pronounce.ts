@@ -37,7 +37,7 @@ const command: Command = {
   name: "pronounce",
   description: "Play the Greek pronunciation of a word",
   permission: "bot.commands.pronounce",
-  rateLimit: { capacity: 4, refillPerSecond: 0.1 },
+  rateLimit: { capacity: 1, refillPerSecond: 0.1 },
   data: new SlashCommandBuilder()
     .setName("pronounce")
     .setDescription("Play the Greek pronunciation of a word")
@@ -51,38 +51,48 @@ const command: Command = {
     const word = args.join(" ").trim();
     if (!word) {
       await message.reply("Usage: `ns pronounce <word>`");
-      return;
+      return false;
     }
     const channel = message.channel;
-    if (!sendable(channel)) return;
+    if (!sendable(channel)) return false;
 
     const html = await fetchWordPage(word);
-    const audioUrl = html ? greekAudioUrl(html) : null;
+    if (!html) {
+      await message.reply("That entry does not exist.");
+      return false;
+    }
+    const audioUrl = greekAudioUrl(html);
     if (!audioUrl) {
       await message.reply("That entry does not exist.");
-      return;
+      return true;
     }
     const audio = await fetchAudio(audioUrl);
     await channel.send({
       embeds: [pronounceEmbed(word)],
       files: [{ attachment: audio, name: audioName(word) }],
     });
+    return true;
   },
   async interactionExecute(interaction) {
     const word = interaction.options.getString("word", true).trim();
     await interaction.deferReply();
 
     const html = await fetchWordPage(word);
-    const audioUrl = html ? greekAudioUrl(html) : null;
+    if (!html) {
+      await interaction.editReply({ content: "That entry does not exist." });
+      return false;
+    }
+    const audioUrl = greekAudioUrl(html);
     if (!audioUrl) {
       await interaction.editReply({ content: "That entry does not exist." });
-      return;
+      return true;
     }
     const audio = await fetchAudio(audioUrl);
     await interaction.editReply({
       embeds: [pronounceEmbed(word)],
       files: [{ attachment: audio, name: audioName(word) }],
     });
+    return true;
   },
 };
 

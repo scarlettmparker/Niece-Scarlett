@@ -22,9 +22,9 @@ export interface Command {
   messageExecute: (
     message: Message,
     args: string[],
-    intent?: CommandIntent,
-  ) => Promise<void>;
+    intent?: CommandIntent
+  ) => Promise<boolean | void>; // true when the underlying fetch succeeded
   interactionExecute?: (
-    interaction: ChatInputCommandInteraction,
-  ) => Promise<void>;
+    interaction: ChatInputCommandInteraction
+  ) => Promise<boolean | void>; // true when the underlying fetch succeeded
 }
