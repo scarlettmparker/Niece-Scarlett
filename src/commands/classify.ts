@@ -68,7 +68,6 @@ const command: Command = {
   name: "classify",
   aliases: ["level", "cefr"],
   description: "Predict the CEFR level of a text",
-  rateLimit: { capacity: 5, refillPerSecond: 0.25 },
   data: new SlashCommandBuilder()
     .setName("classify")
     .setDescription("Predict the CEFR level of a text")

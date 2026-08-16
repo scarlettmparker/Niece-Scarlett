@@ -102,7 +102,6 @@ const command: Command = {
   name: "define",
   aliases: ["meaning", "dictionary"],
   description: "Define a Greek word from WordReference",
-  rateLimit: { capacity: 1, refillPerSecond: 0.1 },
   data: new SlashCommandBuilder()
     .setName("define")
     .setDescription("Define a Greek word from WordReference")
