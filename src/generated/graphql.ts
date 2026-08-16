@@ -335,6 +335,7 @@ export type HadesQueries = {
   annotations: Array<ReaderAnnotation>;
   classifyTextLevel?: Maybe<TextLevelAssessment>;
   comments: PagedReaderComments;
+  defineWord?: Maybe<Word>;
   locateRemoteObjects: Array<ReaderObjectReference>;
   myVote?: Maybe<VoteValue>;
   readerAccount?: Maybe<ReaderAccount>;
@@ -366,6 +367,12 @@ export type HadesQueriesCommentsArgs = {
   annotationId: Scalars['ID']['input'];
   includeHidden?: InputMaybe<Scalars['Boolean']['input']>;
   pagination?: InputMaybe<PaginationInput>;
+};
+
+
+export type HadesQueriesDefineWordArgs = {
+  scope?: InputMaybe<Array<WordScope>>;
+  word: Scalars['String']['input'];
 };
 
 
@@ -638,6 +645,42 @@ export enum VoteValue {
   Up = 'UP'
 }
 
+export type Word = {
+  __typename?: 'Word';
+  compounds: Array<WordEntry>;
+  entries: Array<WordEntry>;
+  id: Scalars['ID']['output'];
+  relatedWords: Array<Word>;
+  sourceUrl: Scalars['String']['output'];
+  term: Scalars['String']['output'];
+  wordType?: Maybe<Scalars['String']['output']>;
+};
+
+export type WordEntry = {
+  __typename?: 'WordEntry';
+  examples: Array<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  sense?: Maybe<Scalars['String']['output']>;
+  term: Scalars['String']['output'];
+  translations: Array<WordTranslation>;
+  wordType: Scalars['String']['output'];
+};
+
+export enum WordScope {
+  AllTranslations = 'ALL_TRANSLATIONS',
+  Compounds = 'COMPOUNDS',
+  Examples = 'EXAMPLES',
+  RelatedWords = 'RELATED_WORDS'
+}
+
+export type WordTranslation = {
+  __typename?: 'WordTranslation';
+  term: Scalars['String']['output'];
+  usageNotes: Array<Scalars['String']['output']>;
+  wordType?: Maybe<Scalars['String']['output']>;
+};
+
 export type ListBlogPostsPagedQueryVariables = Exact<{
   pagination?: InputMaybe<PaginationInput>;
 }>;
@@ -676,6 +719,14 @@ export type ClassifyTextLevelQueryVariables = Exact<{
 
 export type ClassifyTextLevelQuery = { __typename?: 'Query', hadesQueries: { __typename?: 'HadesQueries', classifyTextLevel?: { __typename?: 'TextLevelAssessment', level: CefrLevel, confidence: number, probabilities: Array<{ __typename?: 'LevelProbability', level: CefrLevel, probability: number }>, factors: Array<{ __typename?: 'ComplexityFactor', name: string, value: number, direction: string, weight: number }> } | null } };
 
+export type DefineWordQueryVariables = Exact<{
+  word: Scalars['String']['input'];
+  scope?: InputMaybe<Array<WordScope> | WordScope>;
+}>;
+
+
+export type DefineWordQuery = { __typename?: 'Query', hadesQueries: { __typename?: 'HadesQueries', defineWord?: { __typename?: 'Word', id: string, term: string, wordType?: string | null, sourceUrl: string, entries: Array<{ __typename?: 'WordEntry', id: string, term: string, wordType: string, sense?: string | null, examples: Array<string>, note?: string | null, translations: Array<{ __typename?: 'WordTranslation', term: string, wordType?: string | null, usageNotes: Array<string> }> }>, compounds: Array<{ __typename?: 'WordEntry', id: string, term: string, wordType: string, sense?: string | null, examples: Array<string>, note?: string | null, translations: Array<{ __typename?: 'WordTranslation', term: string, wordType?: string | null, usageNotes: Array<string> }> }>, relatedWords: Array<{ __typename?: 'Word', id: string, term: string, sourceUrl: string }> } | null } };
+
 export type ListTextsQueryVariables = Exact<{
   pagination?: InputMaybe<PaginationInput>;
 }>;
@@ -696,5 +747,6 @@ export const LocateBlogPostDocument = {"kind":"Document","definitions":[{"kind":
 export const EffectivePermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"effectivePermissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"remoteUserType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RemoteUserType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"remoteUserId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"gaiaQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"effectivePermissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"remoteUserType"},"value":{"kind":"Variable","name":{"kind":"Name","value":"remoteUserType"}}},{"kind":"Argument","name":{"kind":"Name","value":"remoteUserId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"remoteUserId"}}}]}]}}]}}]} as unknown as DocumentNode<EffectivePermissionsQuery, EffectivePermissionsQueryVariables>;
 export const PropertySetDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"propertySet"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ownerKey"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entry"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"gaiaQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"propertySet"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ownerKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ownerKey"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"entry"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entry"}}}]}]}}]}}]} as unknown as DocumentNode<PropertySetQuery, PropertySetQueryVariables>;
 export const ClassifyTextLevelDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"classifyTextLevel"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"text"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hadesQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"classifyTextLevel"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"text"},"value":{"kind":"Variable","name":{"kind":"Name","value":"text"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"level"}},{"kind":"Field","name":{"kind":"Name","value":"confidence"}},{"kind":"Field","name":{"kind":"Name","value":"probabilities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"level"}},{"kind":"Field","name":{"kind":"Name","value":"probability"}}]}},{"kind":"Field","name":{"kind":"Name","value":"factors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}},{"kind":"Field","name":{"kind":"Name","value":"weight"}}]}}]}}]}}]}}]} as unknown as DocumentNode<ClassifyTextLevelQuery, ClassifyTextLevelQueryVariables>;
+export const DefineWordDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"defineWord"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"word"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"WordScope"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hadesQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"defineWord"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"word"},"value":{"kind":"Variable","name":{"kind":"Name","value":"word"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"wordType"}},{"kind":"Field","name":{"kind":"Name","value":"entries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"wordType"}},{"kind":"Field","name":{"kind":"Name","value":"sense"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"wordType"}},{"kind":"Field","name":{"kind":"Name","value":"usageNotes"}}]}},{"kind":"Field","name":{"kind":"Name","value":"examples"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}},{"kind":"Field","name":{"kind":"Name","value":"compounds"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"wordType"}},{"kind":"Field","name":{"kind":"Name","value":"sense"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"wordType"}},{"kind":"Field","name":{"kind":"Name","value":"usageNotes"}}]}},{"kind":"Field","name":{"kind":"Name","value":"examples"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}},{"kind":"Field","name":{"kind":"Name","value":"relatedWords"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"term"}},{"kind":"Field","name":{"kind":"Name","value":"sourceUrl"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sourceUrl"}}]}}]}}]}}]} as unknown as DocumentNode<DefineWordQuery, DefineWordQueryVariables>;
 export const ListTextsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listTexts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pagination"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PaginationInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hadesQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"texts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pagination"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pagination"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"level"}},{"kind":"Field","name":{"kind":"Name","value":"ownerId"}},{"kind":"Field","name":{"kind":"Name","value":"sourceId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"hasPreviousPage"}}]}}]}}]}}]}}]} as unknown as DocumentNode<ListTextsQuery, ListTextsQueryVariables>;
 export const LocateTextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"locateText"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hadesQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"level"}},{"kind":"Field","name":{"kind":"Name","value":"ownerId"}},{"kind":"Field","name":{"kind":"Name","value":"sourceId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]}}]} as unknown as DocumentNode<LocateTextQuery, LocateTextQueryVariables>;

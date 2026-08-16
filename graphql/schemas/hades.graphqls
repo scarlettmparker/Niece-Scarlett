@@ -153,6 +153,7 @@ type HadesQueries {
   sources: [ReaderSource!]
   texts(pagination: PaginationInput): PagedReaderTexts!
   classifyTextLevel(text: String!): TextLevelAssessment
+  defineWord(word: String!, scope: [WordScope!]): Word
   annotations(textId: ID!, includeHidden: Boolean): [ReaderAnnotation!]!
   annotation(id: ID!): ReaderAnnotation
   comments(
@@ -216,4 +217,37 @@ type TextLevelAssessment {
   confidence: Float!
   probabilities: [LevelProbability!]!
   factors: [ComplexityFactor!]!
+}
+
+enum WordScope {
+  ALL_TRANSLATIONS
+  EXAMPLES
+  COMPOUNDS
+  RELATED_WORDS
+}
+
+type Word {
+  id: ID!
+  term: String!
+  wordType: String
+  entries: [WordEntry!]!
+  compounds: [WordEntry!]!
+  relatedWords: [Word!]!
+  sourceUrl: String!
+}
+
+type WordEntry {
+  id: ID!
+  term: String!
+  wordType: String!
+  sense: String
+  translations: [WordTranslation!]!
+  examples: [String!]!
+  note: String
+}
+
+type WordTranslation {
+  term: String!
+  wordType: String
+  usageNotes: [String!]!
 }

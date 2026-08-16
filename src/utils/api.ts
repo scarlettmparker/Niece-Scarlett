@@ -4,6 +4,7 @@ export type { ApiResponse } from "@sun/api";
 import { executeDocument } from "@sun/api";
 import {
   ClassifyTextLevelDocument,
+  DefineWordDocument,
   EffectivePermissionsDocument,
   FilterOperator,
   ListBlogPostsPagedDocument,
@@ -13,6 +14,8 @@ import {
   SortDirection,
   type ClassifyTextLevelQuery,
   type ClassifyTextLevelQueryVariables,
+  type DefineWordQuery,
+  type DefineWordQueryVariables,
   type EffectivePermissionsQuery,
   type EffectivePermissionsQueryVariables,
   type ListBlogPostsPagedQuery,
@@ -21,6 +24,7 @@ import {
   type LocateBlogPostQueryVariables,
   type PropertySetQuery,
   type PropertySetQueryVariables,
+  type WordScope,
 } from "~/generated/graphql.js";
 
 /**
@@ -112,4 +116,17 @@ export async function fetchEffectivePermissions(discordId: string) {
     remoteUserType: RemoteUserType.Discord,
     remoteUserId: discordId,
   });
+}
+
+/**
+ * Defines a word from WordReference, honoring the requested scopes.
+ *
+ * @param word the word to look up
+ * @param scope the parts of the page to include
+ */
+export async function fetchDefineWord(word: string, scope: WordScope[]) {
+  return executeDocument<DefineWordQuery, DefineWordQueryVariables>(
+    DefineWordDocument,
+    { word, scope }
+  );
 }
