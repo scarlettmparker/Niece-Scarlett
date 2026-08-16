@@ -1,5 +1,6 @@
 import { STOP_WORDS } from "~/utils/intents.js";
 import type {
+  QueryFieldConfig,
   QueryOperator,
   QuerySchema,
   QuerySpec,
@@ -53,6 +54,11 @@ function unkey(token: string): string {
   return token.replace(/_/g, " ");
 }
 
+/**
+ * Escapes a string for use in a regular expression.
+ *
+ * @param value the literal string
+ */
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -80,6 +86,199 @@ function collectPhrases(schema: QuerySchema, excludeWords: string[]): string[] {
     if (word.includes(" ")) phrases.add(word);
   }
   return [...phrases].sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Whether a token is a stop word or excluded trigger word.
+ *
+ * @param token the keyed token
+ * @param excludeSet the excluded trigger words
+ */
+function isStopWord(token: string, excludeSet: Set<string>): boolean {
+  return STOP_WORDS.has(token) || excludeSet.has(token) || token === "and" || token === "or";
+}
+
+type ControlContext = {
+  /**
+   * Page alias tokens keyed by their underscore form.
+   */
+  pageAliases: Set<string>;
+  /**
+   * Field alias tokens mapped to their canonical field name.
+   */
+  fieldAliasMap: Map<string, string>;
+  /**
+   * Sort alias tokens mapped to their field and optional direction.
+   */
+  sortFieldMap: Map<string, { field: string; direction?: "ASC" | "DESC" }>;
+  /**
+   * Operator trigger words mapped to their QueryOperator.
+   */
+  operatorMap: Map<string, QueryOperator>;
+  /**
+   * Direction trigger words mapped to ASC or DESC.
+   */
+  directionMap: Map<string, "ASC" | "DESC">;
+  /**
+   * Intent trigger words to exclude from free text.
+   */
+  excludeSet: Set<string>;
+};
+
+/**
+ * Whether a token is a structural keyword (page alias, field name, operator,
+ * sort direction, or the bare words "sort", "filter", "by", "on").
+ *
+ * @param token the keyed token
+ * @param ctx the control-word lookup context
+ */
+function isControlWord(token: string, ctx: ControlContext): boolean {
+  return (
+    ctx.pageAliases.has(token) ||
+    ctx.fieldAliasMap.has(token) ||
+    ctx.sortFieldMap.has(token) ||
+    ctx.operatorMap.has(token) ||
+    ctx.directionMap.has(token) ||
+    token === "sort" ||
+    token === "filter" ||
+    token === "by" ||
+    token === "on"
+  );
+}
+
+/**
+ * Parses a filter clause starting at valueStart for the given field.
+ *
+ * @param tokens the tokenized input
+ * @param valueStart index of the first value token
+ * @param fieldName the resolved field name
+ * @param explicitOperator an operator already consumed by the caller
+ * @param config the field configuration from the schema
+ * @param ctx the control-word lookup context
+ * @param spec the spec to mutate
+ * @return the next token index after the filter
+ */
+function parseFilter(
+  tokens: string[],
+  valueStart: number,
+  fieldName: string,
+  explicitOperator: QueryOperator | undefined,
+  config: QueryFieldConfig,
+  ctx: ControlContext,
+  spec: QuerySpec,
+): number {
+  let operator = explicitOperator ?? config.defaultOperator ?? "EQUALS";
+  let j = valueStart;
+  if (!explicitOperator && ctx.operatorMap.has(tokens[j])) {
+    operator = ctx.operatorMap.get(tokens[j])!;
+    j++;
+  }
+  const values: string[] = [];
+  while (j < tokens.length) {
+    const token = tokens[j];
+    if (token === "and" || token === "or") {
+      j++;
+      continue;
+    }
+    if (isStopWord(token, ctx.excludeSet) || isControlWord(token, ctx)) break;
+    if (config.values) {
+      const canonical = config.values[unkey(token)];
+      if (!canonical) break;
+      values.push(canonical);
+    } else {
+      values.push(unkey(token));
+    }
+    j++;
+  }
+  if (values.length === 0) {
+    return valueStart;
+  }
+  spec.filters.push({
+    field: fieldName,
+    operator: values.length > 1 ? "IN" : operator,
+    value: values.join(","),
+  });
+  return j;
+}
+
+/**
+ * Parses free-text tokens into the search accumulator.
+ *
+ * @param tokens the tokenized input
+ * @param valueStart index of the first search token
+ * @param searchTokens accumulator for search terms
+ * @param ctx the control-word lookup context
+ * @return the next token index after the search terms
+ */
+function parseSearch(
+  tokens: string[],
+  valueStart: number,
+  searchTokens: string[],
+  ctx: ControlContext,
+): number {
+  let j = valueStart;
+  while (j < tokens.length && !isControlWord(tokens[j], ctx) && !isStopWord(tokens[j], ctx.excludeSet)) {
+    searchTokens.push(unkey(tokens[j]));
+    j++;
+  }
+  return j;
+}
+
+/**
+ * Parses a sort clause starting at start.
+ *
+ * @param tokens the tokenized input
+ * @param start index of the first sort token
+ * @param schema the query schema
+ * @param ctx the control-word lookup context
+ * @param spec the spec to mutate
+ * @return the next token index after the sort clause
+ */
+function parseSort(
+  tokens: string[],
+  start: number,
+  schema: QuerySchema,
+  ctx: ControlContext,
+  spec: QuerySpec,
+): number {
+  let j = start;
+  if (tokens[j] === "by" || tokens[j] === "on") j++;
+  let field: string | undefined;
+  let direction: "ASC" | "DESC" | undefined;
+
+  const fieldToken = tokens[j];
+  if (ctx.sortFieldMap.has(fieldToken)) {
+    const info = ctx.sortFieldMap.get(fieldToken)!;
+    field = info.field;
+    direction = info.direction;
+    j++;
+    if (!direction && ctx.directionMap.has(tokens[j])) {
+      direction = ctx.directionMap.get(tokens[j])!;
+      j++;
+    }
+  } else if (ctx.directionMap.has(fieldToken)) {
+    direction = ctx.directionMap.get(fieldToken)!;
+    j++;
+    if (tokens[j] === "on" || tokens[j] === "by") j++;
+    if (ctx.sortFieldMap.has(tokens[j])) {
+      const info = ctx.sortFieldMap.get(tokens[j])!;
+      field = info.field;
+      if (!direction) direction = info.direction;
+      j++;
+    }
+  }
+
+  const resolvedField = field ?? schema.sort?.default?.by;
+  if (!resolvedField) {
+    return j;
+  }
+  const resolvedDirection =
+    direction ??
+    schema.sort?.fields[resolvedField]?.defaultDirection ??
+    schema.sort?.default?.dir ??
+    "ASC";
+  spec.sort = { by: resolvedField, dir: resolvedDirection };
+  return j;
 }
 
 /**
@@ -127,108 +326,13 @@ export function parseQuerySpec(
   }
   const excludeSet = new Set(excludeWords.map(key));
 
-  const isStop = (token: string) =>
-    STOP_WORDS.has(token) || excludeSet.has(token) || token === "and" || token === "or";
-  const isControl = (token: string) =>
-    pageAliases.has(token) ||
-    fieldAliasMap.has(token) ||
-    sortFieldMap.has(token) ||
-    operatorMap.has(token) ||
-    directionMap.has(token) ||
-    token === "sort" ||
-    token === "filter" ||
-    token === "by" ||
-    token === "on";
-
-  const parseFilter = (
-    tokens: string[],
-    valueStart: number,
-    fieldName: string,
-    explicitOperator?: QueryOperator
-  ): number => {
-    const config = schema.fields[fieldName];
-    let operator = explicitOperator ?? config.defaultOperator ?? "EQUALS";
-    let j = valueStart;
-    if (!explicitOperator && operatorMap.has(tokens[j])) {
-      operator = operatorMap.get(tokens[j])!;
-      j++;
-    }
-    const values: string[] = [];
-    while (j < tokens.length) {
-      const token = tokens[j];
-      if (token === "and" || token === "or") {
-        j++;
-        continue;
-      }
-      if (isStop(token) || isControl(token)) break;
-      if (config.values) {
-        const canonical = config.values[unkey(token)];
-        if (!canonical) break;
-        values.push(canonical);
-      } else {
-        values.push(unkey(token));
-      }
-      j++;
-    }
-    if (values.length === 0) {
-      return valueStart;
-    }
-    spec.filters.push({
-      field: fieldName,
-      operator: values.length > 1 ? "IN" : operator,
-      value: values.join(","),
-    });
-    return j;
-  };
-
-  const parseSearch = (tokens: string[], valueStart: number): number => {
-    let j = valueStart;
-    while (j < tokens.length && !isControl(tokens[j]) && !isStop(tokens[j])) {
-      searchTokens.push(unkey(tokens[j]));
-      j++;
-    }
-    return j;
-  };
-
-  const parseSort = (tokens: string[], start: number): number => {
-    let j = start;
-    if (tokens[j] === "by" || tokens[j] === "on") j++;
-    let field: string | undefined;
-    let direction: "ASC" | "DESC" | undefined;
-
-    const fieldToken = tokens[j];
-    if (sortFieldMap.has(fieldToken)) {
-      const info = sortFieldMap.get(fieldToken)!;
-      field = info.field;
-      direction = info.direction;
-      j++;
-      if (!direction && directionMap.has(tokens[j])) {
-        direction = directionMap.get(tokens[j])!;
-        j++;
-      }
-    } else if (directionMap.has(fieldToken)) {
-      direction = directionMap.get(fieldToken)!;
-      j++;
-      if (tokens[j] === "on" || tokens[j] === "by") j++;
-      if (sortFieldMap.has(tokens[j])) {
-        const info = sortFieldMap.get(tokens[j])!;
-        field = info.field;
-        if (!direction) direction = info.direction;
-        j++;
-      }
-    }
-
-    const resolvedField = field ?? schema.sort?.default?.by;
-    if (!resolvedField) {
-      return j;
-    }
-    const resolvedDirection =
-      direction ??
-      schema.sort?.fields[resolvedField]?.defaultDirection ??
-      schema.sort?.default?.dir ??
-      "ASC";
-    spec.sort = { by: resolvedField, dir: resolvedDirection };
-    return j;
+  const ctx: ControlContext = {
+    pageAliases,
+    fieldAliasMap,
+    sortFieldMap,
+    operatorMap,
+    directionMap,
+    excludeSet,
   };
 
   let i = 0;
@@ -250,19 +354,20 @@ export function parseQuerySpec(
       continue;
     }
     if (token === "sort" || directionMap.has(token)) {
-      i = parseSort(tokens, token === "sort" ? i + 1 : i);
+      i = parseSort(tokens, token === "sort" ? i + 1 : i, schema, ctx, spec);
       continue;
     }
     const fieldName = fieldAliasMap.get(token);
     if (fieldName) {
-      i = parseFilter(tokens, i + 1, fieldName);
+      const config = schema.fields[fieldName];
+      i = parseFilter(tokens, i + 1, fieldName, undefined, config, ctx, spec);
       continue;
     }
     if (schema.defaultSearchField && operatorMap.has(token)) {
-      i = parseSearch(tokens, i + 1);
+      i = parseSearch(tokens, i + 1, searchTokens, ctx);
       continue;
     }
-    if (!isStop(token) && !isControl(token)) {
+    if (!isStopWord(token, excludeSet) && !isControlWord(token, ctx)) {
       searchTokens.push(unkey(token));
     }
     i++;
