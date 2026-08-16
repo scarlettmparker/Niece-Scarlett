@@ -1,0 +1,11 @@
+{
+  "help": {
+    "title": "Available commands",
+    "empty": "No commands available.",
+    "permission": "Permission",
+    "rate-limit": "Rate limit",
+    "unknown": "Unknown command. Available: {commands}",
+    "description": "List available commands or show help for a specific command",
+    "command-option": "Command name to get detailed help for"
+  }
+}

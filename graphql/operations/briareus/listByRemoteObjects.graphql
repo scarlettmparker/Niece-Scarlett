@@ -1,0 +1,14 @@
+query listBlogPostsByRemoteObjects($ids: [String!]!) {
+  blogQueries {
+    listByRemoteObjects(ids: $ids) {
+      id
+      title
+      content
+      language
+      type {
+        id
+        name
+      }
+    }
+  }
+}

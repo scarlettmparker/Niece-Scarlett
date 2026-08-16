@@ -1,0 +1,18 @@
+query accessibleCommandIntents(
+  $remoteUserType: RemoteUserType!
+  $remoteUserId: String!
+  $ownerKey: String!
+  $propertySet: String!
+) {
+  gaiaQueries {
+    accessibleCommandIntents(
+      remoteUserType: $remoteUserType
+      remoteUserId: $remoteUserId
+      ownerKey: $ownerKey
+      propertySet: $propertySet
+    ) {
+      entryName
+      values
+    }
+  }
+}

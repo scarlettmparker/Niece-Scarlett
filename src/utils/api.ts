@@ -8,10 +8,14 @@ import {
   EffectivePermissionsDocument,
   FilterOperator,
   ListBlogPostsPagedDocument,
+  ListBlogPostsByRemoteObjectsDocument,
   LocateBlogPostDocument,
   PropertySetDocument,
   RemoteUserType,
   SortDirection,
+  AccessibleCommandIntentsDocument,
+  type AccessibleCommandIntentsQuery,
+  type AccessibleCommandIntentsQueryVariables,
   type ClassifyTextLevelQuery,
   type ClassifyTextLevelQueryVariables,
   type DefineWordQuery,
@@ -20,6 +24,8 @@ import {
   type EffectivePermissionsQueryVariables,
   type ListBlogPostsPagedQuery,
   type ListBlogPostsPagedQueryVariables,
+  type ListBlogPostsByRemoteObjectsQuery,
+  type ListBlogPostsByRemoteObjectsQueryVariables,
   type LocateBlogPostQuery,
   type LocateBlogPostQueryVariables,
   type PropertySetQuery,
@@ -89,6 +95,41 @@ export async function fetchLocateBlogPost(id: string) {
     LocateBlogPostDocument,
     { id },
   );
+}
+
+/**
+ * Fetches blog posts by their remote-object ids.
+ *
+ * @param ids the remote-object ids to look up
+ */
+export async function fetchBlogPostsByRemoteObjects(ids: string[]) {
+  return executeDocument<
+    ListBlogPostsByRemoteObjectsQuery,
+    ListBlogPostsByRemoteObjectsQueryVariables
+  >(ListBlogPostsByRemoteObjectsDocument, { ids });
+}
+
+/**
+ * Property-set entries the remote user may execute.
+ *
+ * @param discordId the Discord user id
+ * @param ownerKey the property-set owner
+ * @param propertySet the property-set name
+ */
+export async function fetchAccessibleCommands(
+  discordId: string,
+  ownerKey: string,
+  propertySet: string,
+) {
+  return executeDocument<
+    AccessibleCommandIntentsQuery,
+    AccessibleCommandIntentsQueryVariables
+  >(AccessibleCommandIntentsDocument, {
+    remoteUserType: RemoteUserType.Discord,
+    remoteUserId: discordId,
+    ownerKey,
+    propertySet,
+  });
 }
 
 /**

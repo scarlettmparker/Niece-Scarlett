@@ -29,6 +29,29 @@ type GaiaQueries {
   account(id: ID!): Account
   accounts(pagination: PaginationInput): PagedAccounts!
   effectivePermissions(remoteUserType: RemoteUserType!, remoteUserId: String!): [String!]!
+  accessibleCommandIntents(
+    remoteUserType: RemoteUserType!
+    remoteUserId: String!
+    ownerKey: String!
+    propertySet: String!
+  ): [PropertySetEntry!]!
+}
+
+enum EntryStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+type PropertySetEntry {
+  id: String!
+  ownerKey: String!
+  propertySet: String!
+  entryName: String!
+  values: JSON!
+  configurable: Boolean!
+  status: EntryStatus!
+  createdAt: Date
+  updatedAt: Date
 }
 
 input LoginInput {
