@@ -7,5 +7,11 @@
     "unknown": "Unknown command. Available: {commands}",
     "description": "List available commands or show help for a specific command",
     "command-option": "Command name to get detailed help for"
+  },
+  "annotations": {
+    "description": "List annotations for a text",
+    "text-option": "Text id or title search",
+    "empty": "No annotations found.",
+    "not-found": "No text found."
   }
 }

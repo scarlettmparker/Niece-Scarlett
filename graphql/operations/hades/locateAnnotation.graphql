@@ -1,0 +1,22 @@
+query locateAnnotation($id: ID!) {
+  hadesQueries {
+    annotation(id: $id) {
+      id
+      body
+      upvotes
+      downvotes
+      netScore
+      replyCount
+      author {
+        type
+        id
+      }
+      authorProfile {
+        discordUsername
+        globalName
+      }
+      createdAt
+      updatedAt
+    }
+  }
+}

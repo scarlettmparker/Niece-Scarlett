@@ -1,0 +1,40 @@
+query listAnnotations(
+  $textId: ID!
+  $includeHidden: Boolean
+  $pagination: PaginationInput
+) {
+  hadesQueries {
+    annotations(
+      textId: $textId
+      includeHidden: $includeHidden
+      pagination: $pagination
+    ) {
+      items {
+        id
+        body
+        upvotes
+        downvotes
+        netScore
+        replyCount
+        author {
+          type
+          id
+        }
+        authorProfile {
+          discordUsername
+          globalName
+        }
+        createdAt
+        updatedAt
+      }
+      pageInfo {
+        page
+        size
+        totalPages
+        totalCount
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+}

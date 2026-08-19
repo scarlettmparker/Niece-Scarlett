@@ -3,17 +3,19 @@ export type { ApiResponse } from "@sun/api";
 
 import { executeDocument } from "@sun/api";
 import {
+  AccessibleCommandIntentsDocument,
   ClassifyTextLevelDocument,
   DefineWordDocument,
   EffectivePermissionsDocument,
   FilterOperator,
+  ListAnnotationsDocument,
   ListBlogPostsPagedDocument,
   ListBlogPostsByRemoteObjectsDocument,
+  LocateAnnotationDocument,
   LocateBlogPostDocument,
   PropertySetDocument,
   RemoteUserType,
   SortDirection,
-  AccessibleCommandIntentsDocument,
   type AccessibleCommandIntentsQuery,
   type AccessibleCommandIntentsQueryVariables,
   type ClassifyTextLevelQuery,
@@ -22,10 +24,14 @@ import {
   type DefineWordQueryVariables,
   type EffectivePermissionsQuery,
   type EffectivePermissionsQueryVariables,
+  type ListAnnotationsQuery,
+  type ListAnnotationsQueryVariables,
   type ListBlogPostsPagedQuery,
   type ListBlogPostsPagedQueryVariables,
   type ListBlogPostsByRemoteObjectsQuery,
   type ListBlogPostsByRemoteObjectsQueryVariables,
+  type LocateAnnotationQuery,
+  type LocateAnnotationQueryVariables,
   type LocateBlogPostQuery,
   type LocateBlogPostQueryVariables,
   type PropertySetQuery,
@@ -169,5 +175,44 @@ export async function fetchDefineWord(word: string, scope: WordScope[]) {
   return executeDocument<DefineWordQuery, DefineWordQueryVariables>(
     DefineWordDocument,
     { word, scope }
+  );
+}
+
+/**
+ * Paginated annotations for a text.
+ *
+ * @param textId the text id
+ * @param pagination the page request
+ * @param includeHidden whether to include hidden annotations
+ */
+export async function fetchAnnotations(
+  textId: string,
+  pagination: { page: number; size?: number; sortBy?: string; sortDir?: string },
+  includeHidden = false,
+) {
+  return executeDocument<ListAnnotationsQuery, ListAnnotationsQueryVariables>(
+    ListAnnotationsDocument,
+    {
+      textId,
+      includeHidden,
+      pagination: {
+        page: pagination.page,
+        size: pagination.size ?? 10,
+        sortBy: pagination.sortBy ?? "createdAt",
+        sortDir: (pagination.sortDir as SortDirection) ?? SortDirection.Desc,
+      },
+    },
+  );
+}
+
+/**
+ * A single annotation by id.
+ *
+ * @param id the annotation id
+ */
+export async function fetchAnnotation(id: string) {
+  return executeDocument<LocateAnnotationQuery, LocateAnnotationQueryVariables>(
+    LocateAnnotationDocument,
+    { id },
   );
 }

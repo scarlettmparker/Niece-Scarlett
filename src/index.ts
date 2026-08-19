@@ -16,6 +16,10 @@ import {
   TEXT_VIEWER_PREFIX,
   handleViewerButton,
 } from "~/components/text-viewer.js";
+import {
+  handleAnnotationListPage,
+  isAnnotationListId,
+} from "~/components/annotation-list.js";
 import type { ClientType } from "~/types/client.js";
 import type { Command } from "~/types/command.js";
 import { loadCommands } from "~/utils/load-commands.js";
@@ -240,6 +244,8 @@ export async function bootClient(): Promise<void> {
       if (interaction.isButton()) {
         if (interaction.customId.startsWith(TEXT_VIEWER_PREFIX)) {
           await handleViewerButton(interaction);
+        } else if (isAnnotationListId(interaction.customId)) {
+          await handleAnnotationListPage(interaction);
         } else if (isTextListId(interaction.customId)) {
           await handleListPage(interaction);
         }
