@@ -14,19 +14,19 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  Date: { input: any; output: any; }
+  DateTime: { input: any; output: any; }
   JSON: { input: any; output: any; }
 };
 
 export type Account = {
   __typename?: 'Account';
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['String']['output'];
   personId: Scalars['ID']['output'];
   provider?: Maybe<Scalars['String']['output']>;
   remoteUsers?: Maybe<Array<RemoteUser>>;
   status: AccountStatus;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
   username: Scalars['String']['output'];
 };
 
@@ -72,14 +72,14 @@ export type BlogMutationsCreateBlogPostTypeArgs = {
 export type BlogPost = {
   __typename?: 'BlogPost';
   content?: Maybe<Scalars['String']['output']>;
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['String']['output'];
   language?: Maybe<Scalars['String']['output']>;
   remoteObject?: Maybe<Array<Scalars['String']['output']>>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
   title: Scalars['String']['output'];
   type?: Maybe<BlogPostType>;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
 export type BlogPostInput = {
@@ -493,13 +493,13 @@ export type PaginationInput = {
 export type PropertySetEntry = {
   __typename?: 'PropertySetEntry';
   configurable: Scalars['Boolean']['output'];
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   entryName: Scalars['String']['output'];
   id: Scalars['String']['output'];
   ownerKey: Scalars['String']['output'];
   propertySet: Scalars['String']['output'];
   status: EntryStatus;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
   values: Scalars['JSON']['output'];
 };
 
@@ -535,7 +535,7 @@ export type ReaderAnnotation = {
   author?: Maybe<RemoteUser>;
   authorProfile?: Maybe<ReaderAccount>;
   body: Scalars['String']['output'];
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   downvotes: Scalars['Int']['output'];
   id: Scalars['String']['output'];
   myVote?: Maybe<VoteValue>;
@@ -545,7 +545,7 @@ export type ReaderAnnotation = {
   remoteObject?: Maybe<Array<Scalars['String']['output']>>;
   replyCount: Scalars['Int']['output'];
   status: ReaderStatus;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
   upvotes: Scalars['Int']['output'];
 };
 
@@ -555,14 +555,14 @@ export type ReaderComment = {
   author?: Maybe<RemoteUser>;
   authorProfile?: Maybe<ReaderAccount>;
   body: Scalars['String']['output'];
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   downvotes: Scalars['Int']['output'];
   id: Scalars['String']['output'];
   myVote?: Maybe<VoteValue>;
   netScore: Scalars['Int']['output'];
   parentId?: Maybe<Scalars['ID']['output']>;
   status: ReaderStatus;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
   upvotes: Scalars['Int']['output'];
 };
 
@@ -603,7 +603,7 @@ export enum ReaderStatus {
 export type ReaderText = {
   __typename?: 'ReaderText';
   content: Scalars['String']['output'];
-  createdAt?: Maybe<Scalars['Date']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['String']['output'];
   language: Scalars['String']['output'];
   level: CefrLevel;
@@ -611,7 +611,7 @@ export type ReaderText = {
   sourceId?: Maybe<Scalars['ID']['output']>;
   status: ReaderTextStatus;
   title: Scalars['String']['output'];
-  updatedAt?: Maybe<Scalars['Date']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
 export type ReaderTextInput = {

@@ -12,8 +12,8 @@ type Account {
   status: AccountStatus!
   provider: String
   remoteUsers: [RemoteUser!]
-  createdAt: Date
-  updatedAt: Date
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 enum AccountStatus {
@@ -50,8 +50,8 @@ type PropertySetEntry {
   values: JSON!
   configurable: Boolean!
   status: EntryStatus!
-  createdAt: Date
-  updatedAt: Date
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 input LoginInput {

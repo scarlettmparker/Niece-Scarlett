@@ -1,4 +1,4 @@
-scalar Date
+scalar DateTime
 
 type StandardError {
   message: String!
