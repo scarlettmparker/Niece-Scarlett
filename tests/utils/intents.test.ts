@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveIntent, tokenize, type CommandIntent } from "~/utils/intents.js";
+import { tokenize } from "@sun/utils/nlp";
+import { resolveIntent, type CommandIntent } from "~/utils/intents.js";
 
 const intents: CommandIntent[] = [
   {

@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 import { EmbedMessage } from "~/components/embed.js";
 import { WordScope, type DefineWordQuery } from "~/generated/graphql.js";
 import { fetchDefineWord } from "~/utils/api.js";
-import { STOP_WORDS } from "~/utils/intents.js";
+import { STOP_WORDS } from "@sun/utils/nlp";
 import { sendable } from "~/utils/sendable.js";
 import type { Command } from "~/types/command.js";
 

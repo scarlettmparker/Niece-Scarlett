@@ -1,4 +1,4 @@
-import { STOP_WORDS } from "~/utils/intents.js";
+import { STOP_WORDS } from "@sun/utils/nlp";
 import type {
   QueryFieldConfig,
   QueryOperator,
