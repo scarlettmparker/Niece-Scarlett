@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveIntent, tokenize } from "~/utils/intents.js";
+import { tokenize } from "@sun/utils/nlp";
+import { resolveIntent } from "~/utils/intents.js";
 const intents = [
     {
         name: "texts",

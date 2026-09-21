@@ -1,16 +1,5 @@
 scalar DateTime
 
-type StandardError {
-  message: String!
-}
-
-type QuerySuccess {
-  message: String!
-  id: ID
-}
-
-union QueryResult = QuerySuccess | StandardError
-
 enum VoteValue {
   UP
   DOWN

@@ -237,19 +237,75 @@ type HadesQueries {
   locateRemoteObjects(ids: [String!]!): [ReaderObjectReference!]!
 }
 
+type CreateSourceResponse {
+  message: String!
+  source: ReaderSource!
+}
+
+type CreateTextResponse {
+  message: String!
+  text: ReaderText!
+}
+
+type ArchiveTextResponse {
+  message: String!
+  text: ReaderText!
+}
+
+type CreateAnnotationResponse {
+  message: String!
+  annotation: ReaderAnnotation!
+}
+
+type EditAnnotationResponse {
+  message: String!
+  annotation: ReaderAnnotation!
+}
+
+type DeleteAnnotationResponse {
+  message: String!
+  id: ID!
+}
+
+type AddCommentResponse {
+  message: String!
+  comment: ReaderComment!
+}
+
+type EditCommentResponse {
+  message: String!
+  comment: ReaderComment!
+}
+
+type DeleteCommentResponse {
+  message: String!
+  id: ID!
+}
+
+type VoteReaderResponse {
+  message: String!
+  annotation: ReaderAnnotation
+  comment: ReaderComment
+}
+
+type AttachReaderObjectResponse {
+  message: String!
+  id: ID!
+}
+
 type HadesMutations {
-  createSource(name: String!, url: String!): QueryResult
-  createText(input: ReaderTextInput!): QueryResult
-  archiveText(id: ID!): QueryResult
-  createAnnotation(input: AnnotationInput!): QueryResult
-  editAnnotation(id: ID!, body: String!): QueryResult
-  deleteAnnotation(id: ID!): QueryResult
-  addComment(input: CommentInput!): QueryResult
-  editComment(id: ID!, body: String!): QueryResult
-  deleteComment(id: ID!): QueryResult
-  vote(input: VoteInput!): QueryResult
-  removeVote(targetType: ReaderVoteTarget!, targetId: ID!): QueryResult
-  attachObject(source: ID!, target: String!): QueryResult
+  createSource(name: String!, url: String!): CreateSourceResponse!
+  createText(input: ReaderTextInput!): CreateTextResponse!
+  archiveText(id: ID!): ArchiveTextResponse!
+  createAnnotation(input: AnnotationInput!): CreateAnnotationResponse!
+  editAnnotation(id: ID!, body: String!): EditAnnotationResponse!
+  deleteAnnotation(id: ID!): DeleteAnnotationResponse!
+  addComment(input: CommentInput!): AddCommentResponse!
+  editComment(id: ID!, body: String!): EditCommentResponse!
+  deleteComment(id: ID!): DeleteCommentResponse!
+  vote(input: VoteInput!): VoteReaderResponse!
+  removeVote(targetType: ReaderVoteTarget!, targetId: ID!): VoteReaderResponse!
+  attachObject(source: ID!, target: String!): AttachReaderObjectResponse!
   discordLogin(code: String!, state: String!): DiscordLoginResult
 }
 

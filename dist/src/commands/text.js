@@ -18,8 +18,11 @@ async function resolveText(term) {
         return null;
     }
     const result = await resolvePageData("texts", "texts", {
-        query: term,
-        page: 0,
+        spec: {
+            page: 0,
+            filters: [{ field: "title", operator: "MATCHES", value: term }],
+            search: term,
+        },
     });
     if (result.items.length > 1)
         return "multiple";
@@ -31,7 +34,11 @@ async function openForInteraction(interaction, term) {
     await interaction.deferReply({ ephemeral: true });
     const resolved = await resolveText(term);
     if (resolved === "multiple") {
-        await showTextListDeferred(interaction, term);
+        await showTextListDeferred(interaction, {
+            page: 0,
+            filters: [{ field: "title", operator: "MATCHES", value: term }],
+            search: term,
+        });
         return;
     }
     if (!resolved) {
@@ -50,7 +57,11 @@ async function openForMessage(message, term) {
         return;
     const resolved = await resolveText(term);
     if (resolved === "multiple") {
-        await showTextListMessage(message, term);
+        await showTextListMessage(message, {
+            page: 0,
+            filters: [{ field: "title", operator: "MATCHES", value: term }],
+            search: term,
+        });
         return;
     }
     if (!resolved) {

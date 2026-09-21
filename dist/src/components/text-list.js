@@ -12,80 +12,77 @@ const MAX_OPTIONS = 25;
  * Shows the interactive text list to a slash command user (ephemeral).
  *
  * @param interaction the command interaction
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
-export async function showTextList(interaction, query, level) {
+export async function showTextList(interaction, spec) {
     await interaction.deferReply({ ephemeral: true });
-    await sendTextList(interaction, query, level);
+    await sendTextList(interaction, spec);
 }
 /**
  * Renders the list into an already-deferred interaction reply.
  *
  * @param interaction the command interaction
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
-export async function showTextListDeferred(interaction, query, level) {
-    await sendTextList(interaction, query, level);
+export async function showTextListDeferred(interaction, spec) {
+    await sendTextList(interaction, spec);
 }
-async function sendTextList(interaction, query, level) {
+async function sendTextList(interaction, spec) {
     const state = {
         ownerId: interaction.user.id,
-        query,
-        level,
-        page: 0,
+        spec,
         totalPages: 1,
     };
     const token = setState(state);
     const render = await buildTextList(state, token);
-    await interaction.editReply({ embeds: [render.embed], components: render.components });
+    await interaction.editReply({
+        embeds: [render.embed],
+        components: render.components,
+    });
 }
 /**
  * Shows the interactive text list in a message's channel.
  *
  * @param message the message that invoked the command
- * @param query optional title search
- * @param level optional CEFR level
+ * @param spec the parsed query spec
  */
-export async function showTextListMessage(message, query, level) {
+export async function showTextListMessage(message, spec) {
     if (!sendable(message.channel))
         return;
     const state = {
         ownerId: message.author.id,
-        query,
-        level,
-        page: 0,
+        spec,
         totalPages: 1,
     };
     const token = setState(state);
     const render = await buildTextList(state, token);
-    await message.channel.send({ embeds: [render.embed], components: render.components });
+    await message.channel.send({
+        embeds: [render.embed],
+        components: render.components,
+    });
 }
 async function buildTextList(state, token) {
     const result = await resolvePageData("texts", "texts", {
-        query: state.query,
-        level: state.level,
-        page: state.page,
+        spec: state.spec,
     });
     const texts = result.items;
     const totalPages = Math.max(result.pageInfo.totalPages, 1);
-    const offset = state.page * Math.max(result.pageInfo.size, 1);
+    const offset = state.spec.page * Math.max(result.pageInfo.size, 1);
     updateState(token, { totalPages });
     const embed = new EmbedMessage()
-        .setTitle(state.query ? `Texts matching "${state.query}"` : "Texts")
+        .setTitle(state.spec.search ? `Texts matching "${state.spec.search}"` : "Texts")
         .setBody(texts.length > 0
         ? texts
-            .map((text, index) => `${offset + index + 1}. **${text.title}** — ${text.level} · ${text.language}`)
+            .map((text, index) => `${offset + index + 1}. **${text.title}** - ${text.level} · ${text.language}`)
             .join("\n")
         : "No texts found.")
-        .setFooter(`Page ${state.page + 1}/${totalPages}`)
+        .setFooter(`Page ${state.spec.page + 1}/${totalPages}`)
         .build();
     const components = [];
     if (texts.length > 0) {
         components.push(selectRow(token, texts));
     }
-    components.push(pageRow(token, state.page, totalPages));
+    components.push(pageRow(token, state.spec.page, totalPages));
     return { embed, components };
 }
 function selectRow(token, texts) {
@@ -130,16 +127,23 @@ export async function handleListPage(interaction) {
         return;
     const state = getState(parsed.token);
     if (!state || state.ownerId !== interaction.user.id) {
-        await interaction.reply({ content: "That message is not yours to control.", ephemeral: true });
+        await interaction.reply({
+            content: "That message is not yours to control.",
+            ephemeral: true,
+        });
         return;
     }
-    const next = parsed.direction === "prev" ? state.page - 1 : state.page + 1;
+    const next = parsed.direction === "prev" ? state.spec.page - 1 : state.spec.page + 1;
     if (next < 0 || next >= state.totalPages)
         return;
     await interaction.deferUpdate();
-    updateState(parsed.token, { page: next });
-    const render = await buildTextList({ ...state, page: next }, parsed.token);
-    await interaction.editReply({ embeds: [render.embed], components: render.components });
+    const spec = { ...state.spec, page: next };
+    updateState(parsed.token, { spec });
+    const render = await buildTextList({ ...state, spec }, parsed.token);
+    await interaction.editReply({
+        embeds: [render.embed],
+        components: render.components,
+    });
 }
 /**
  * Handles a text pick from the list's select menu.
@@ -150,12 +154,17 @@ export async function handleListSelect(interaction) {
     const token = interaction.customId.slice(LIST_SELECT_PREFIX.length + 1);
     const state = getState(token);
     if (!state || state.ownerId !== interaction.user.id) {
-        await interaction.reply({ content: "That message is not yours to control.", ephemeral: true });
+        await interaction.reply({
+            content: "That message is not yours to control.",
+            ephemeral: true,
+        });
         return;
     }
     const textId = interaction.values[0];
     await interaction.deferReply({ ephemeral: true });
-    const text = await resolvePageData("text", "texts/:id", { id: textId });
+    const text = await resolvePageData("text", "texts/:id", {
+        id: textId,
+    });
     if (!text.id) {
         await interaction.editReply({ content: "That text could not be loaded." });
         return;

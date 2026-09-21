@@ -37,11 +37,29 @@ export enum AccountStatus {
   Suspended = 'SUSPENDED'
 }
 
+export type AddCommentResponse = {
+  __typename?: 'AddCommentResponse';
+  comment: ReaderComment;
+  message: Scalars['String']['output'];
+};
+
 export type AnnotationInput = {
   body: Scalars['String']['input'];
   endOffset: Scalars['Int']['input'];
   startOffset: Scalars['Int']['input'];
   textId: Scalars['ID']['input'];
+};
+
+export type ArchiveTextResponse = {
+  __typename?: 'ArchiveTextResponse';
+  message: Scalars['String']['output'];
+  text: ReaderText;
+};
+
+export type AttachReaderObjectResponse = {
+  __typename?: 'AttachReaderObjectResponse';
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
 };
 
 export type AuthResult = {
@@ -53,8 +71,8 @@ export type AuthResult = {
 
 export type BlogMutations = {
   __typename?: 'BlogMutations';
-  createBlogPost?: Maybe<QueryResult>;
-  createBlogPostType?: Maybe<QueryResult>;
+  createBlogPost: CreateBlogPostResponse;
+  createBlogPostType: CreateBlogPostTypeResponse;
 };
 
 
@@ -144,12 +162,76 @@ export type ComplexityFactor = {
   weight: Scalars['Float']['output'];
 };
 
+export type ConfirmAccountReactivationResponse = {
+  __typename?: 'ConfirmAccountReactivationResponse';
+  message: Scalars['String']['output'];
+};
+
+export type CreateAnnotationResponse = {
+  __typename?: 'CreateAnnotationResponse';
+  annotation: ReaderAnnotation;
+  message: Scalars['String']['output'];
+};
+
+export type CreateBlogPostResponse = {
+  __typename?: 'CreateBlogPostResponse';
+  message: Scalars['String']['output'];
+  post: BlogPost;
+};
+
+export type CreateBlogPostTypeResponse = {
+  __typename?: 'CreateBlogPostTypeResponse';
+  message: Scalars['String']['output'];
+  type: BlogPostType;
+};
+
+export type CreateSourceResponse = {
+  __typename?: 'CreateSourceResponse';
+  message: Scalars['String']['output'];
+  source: ReaderSource;
+};
+
+export type CreateTextResponse = {
+  __typename?: 'CreateTextResponse';
+  message: Scalars['String']['output'];
+  text: ReaderText;
+};
+
+export type DeactivateAccountResponse = {
+  __typename?: 'DeactivateAccountResponse';
+  message: Scalars['String']['output'];
+};
+
+export type DeleteAnnotationResponse = {
+  __typename?: 'DeleteAnnotationResponse';
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+};
+
+export type DeleteCommentResponse = {
+  __typename?: 'DeleteCommentResponse';
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+};
+
 export type DiscordLoginResult = {
   __typename?: 'DiscordLoginResult';
   accountId: Scalars['ID']['output'];
   readerAccountId: Scalars['ID']['output'];
   requiresReactivation: Scalars['Boolean']['output'];
   token: Scalars['String']['output'];
+};
+
+export type EditAnnotationResponse = {
+  __typename?: 'EditAnnotationResponse';
+  annotation: ReaderAnnotation;
+  message: Scalars['String']['output'];
+};
+
+export type EditCommentResponse = {
+  __typename?: 'EditCommentResponse';
+  comment: ReaderComment;
+  message: Scalars['String']['output'];
 };
 
 export enum EntryStatus {
@@ -180,12 +262,12 @@ export enum FilterOperator {
 
 export type GaiaMutations = {
   __typename?: 'GaiaMutations';
-  confirmAccountReactivation?: Maybe<QueryResult>;
-  deactivateAccount?: Maybe<QueryResult>;
+  confirmAccountReactivation: ConfirmAccountReactivationResponse;
+  deactivateAccount: DeactivateAccountResponse;
   login?: Maybe<AuthResult>;
-  requestAccountReactivation?: Maybe<QueryResult>;
-  suspendAccount?: Maybe<QueryResult>;
-  unsuspendAccount?: Maybe<QueryResult>;
+  requestAccountReactivation: RequestAccountReactivationResponse;
+  suspendAccount: SuspendAccountResponse;
+  unsuspendAccount: UnsuspendAccountResponse;
 };
 
 
@@ -257,19 +339,19 @@ export type GaiaQueriesPropertySetArgs = {
 
 export type HadesMutations = {
   __typename?: 'HadesMutations';
-  addComment?: Maybe<QueryResult>;
-  archiveText?: Maybe<QueryResult>;
-  attachObject?: Maybe<QueryResult>;
-  createAnnotation?: Maybe<QueryResult>;
-  createSource?: Maybe<QueryResult>;
-  createText?: Maybe<QueryResult>;
-  deleteAnnotation?: Maybe<QueryResult>;
-  deleteComment?: Maybe<QueryResult>;
+  addComment: AddCommentResponse;
+  archiveText: ArchiveTextResponse;
+  attachObject: AttachReaderObjectResponse;
+  createAnnotation: CreateAnnotationResponse;
+  createSource: CreateSourceResponse;
+  createText: CreateTextResponse;
+  deleteAnnotation: DeleteAnnotationResponse;
+  deleteComment: DeleteCommentResponse;
   discordLogin?: Maybe<DiscordLoginResult>;
-  editAnnotation?: Maybe<QueryResult>;
-  editComment?: Maybe<QueryResult>;
-  removeVote?: Maybe<QueryResult>;
-  vote?: Maybe<QueryResult>;
+  editAnnotation: EditAnnotationResponse;
+  editComment: EditCommentResponse;
+  removeVote: VoteReaderResponse;
+  vote: VoteReaderResponse;
 };
 
 
@@ -510,14 +592,6 @@ export type Query = {
   hadesQueries: HadesQueries;
 };
 
-export type QueryResult = QuerySuccess | StandardError;
-
-export type QuerySuccess = {
-  __typename?: 'QuerySuccess';
-  id?: Maybe<Scalars['ID']['output']>;
-  message: Scalars['String']['output'];
-};
-
 export type ReaderAccount = {
   __typename?: 'ReaderAccount';
   avatar?: Maybe<Scalars['String']['output']>;
@@ -649,13 +723,19 @@ export enum RemoteUserType {
   Discord = 'DISCORD'
 }
 
+export type RequestAccountReactivationResponse = {
+  __typename?: 'RequestAccountReactivationResponse';
+  message: Scalars['String']['output'];
+};
+
 export enum SortDirection {
   Asc = 'ASC',
   Desc = 'DESC'
 }
 
-export type StandardError = {
-  __typename?: 'StandardError';
+export type SuspendAccountResponse = {
+  __typename?: 'SuspendAccountResponse';
+  account: Account;
   message: Scalars['String']['output'];
 };
 
@@ -668,10 +748,23 @@ export type TextLevelAssessment = {
   probabilities: Array<LevelProbability>;
 };
 
+export type UnsuspendAccountResponse = {
+  __typename?: 'UnsuspendAccountResponse';
+  account: Account;
+  message: Scalars['String']['output'];
+};
+
 export type VoteInput = {
   targetId: Scalars['ID']['input'];
   targetType: ReaderVoteTarget;
   value: VoteValue;
+};
+
+export type VoteReaderResponse = {
+  __typename?: 'VoteReaderResponse';
+  annotation?: Maybe<ReaderAnnotation>;
+  comment?: Maybe<ReaderComment>;
+  message: Scalars['String']['output'];
 };
 
 export enum VoteValue {

@@ -9,11 +9,14 @@ defineLoader({
     pattern: "command-intents",
     async loader() {
         const result = await fetchPropertySet(OWNER_KEY, SET_NAME);
-        const map = result.success ? result.data?.gaiaQueries.propertySet : null;
+        const map = result.success
+            ? result.data?.gaiaQueries.propertySet
+            : null;
         const intents = Object.entries(map ?? {}).map(([name, entry]) => ({
             name,
             command: entry.command,
             words: entry.words ?? [],
+            query: entry.query,
         }));
         return { intents };
     },

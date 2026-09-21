@@ -1,9 +1,12 @@
 import { Client, Collection, GatewayIntentBits, } from "discord.js";
 import { botToken } from "~/config.js";
 import { handleListPage, handleListSelect, isTextListId, isTextListSelectId, } from "~/components/text-list.js";
-import { TEXT_VIEWER_PREFIX, handleViewerButton } from "~/components/text-viewer.js";
+import { TEXT_VIEWER_PREFIX, handleViewerButton, } from "~/components/text-viewer.js";
+import { handleAnnotationListPage, isAnnotationListId, } from "~/components/annotation-list.js";
 import { loadCommands } from "~/utils/load-commands.js";
 import { resolveIntent } from "~/utils/intents.js";
+import { canRun, refundRateLimit, reserveRateLimit } from "~/utils/access.js";
+import { effectiveCommandConfig, rateLimitFor, } from "~/utils/command-config.js";
 import { resolvePageData } from "~/utils/page-data.js";
 import { registerCommands } from "~/utils/register-commands.js";
 const PREFIXES = ["niece scarlett", "ns"];
@@ -23,15 +26,72 @@ function stripPrefix(content) {
     return null;
 }
 /**
+ * Reserves a rate-limit token and checks permission before a command runs.
+ *
+ * The token is refunded when the command's fetch fails (see settleRateLimit)
+ * or when the permission check denies the invocation.
+ *
+ * @param userId the requesting user's id
+ * @param command the command being invoked
+ * @param channelId the discord channel id
+ * @param deny how to refuse the invocation
+ * @return whether execution may proceed
+ */
+async function assertCommandAccess(userId, command, channelId, deny) {
+    const config = await effectiveCommandConfig(command);
+    const rateLimit = rateLimitFor(config, channelId);
+    if (rateLimit) {
+        if (rateLimit.capacity === 0) {
+            await deny("This command is not available in this channel.");
+            return false;
+        }
+        const result = reserveRateLimit(`${userId}:${command.name}:${channelId}`, rateLimit.capacity, rateLimit.refillPerSecond);
+        if (!result.allowed) {
+            await deny(`You're going too fast. Try again in ${result.retryAfter}s.`);
+            return false;
+        }
+    }
+    if (config.permission && !(await canRun(userId, config.permission))) {
+        if (rateLimit) {
+            refundRateLimit(`${userId}:${command.name}:${channelId}`, rateLimit.capacity, rateLimit.refillPerSecond);
+        }
+        await deny("You don't have permission to run this command.");
+        return false;
+    }
+    return true;
+}
+/**
+ * Refunds the reserved token when the command's fetch failed.
+ *
+ * @param command the command that ran
+ * @param userId the requesting user's id
+ * @param channelId the discord channel id
+ * @param ok whether the command's fetch succeeded
+ */
+async function settleRateLimit(command, userId, channelId, ok) {
+    const config = await effectiveCommandConfig(command);
+    const rateLimit = rateLimitFor(config, channelId);
+    if (rateLimit && !ok) {
+        refundRateLimit(`${userId}:${command.name}:${channelId}`, rateLimit.capacity, rateLimit.refillPerSecond);
+    }
+}
+/**
  * Boots the Discord client and logs in.
+ *
+ * @note I originally wrote this bot in C++ using DPP,
+ * hence the random "dpp" comments here. Not sure why
+ * I haven't removed it. Don't want to out of pride now.
  */
 export async function bootClient() {
     const client = new Client({
         intents: [
-            GatewayIntentBits.Guilds, // dpp default intents
+            // dpp default intents
+            GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent, // dpp i_message_content
-            GatewayIntentBits.GuildMembers, // dpp i_guild_member
+            // dpp i_message_content
+            GatewayIntentBits.MessageContent,
+            // dpp i_guild_member
+            GatewayIntentBits.GuildMembers,
         ],
     });
     // Load commands
@@ -68,10 +128,15 @@ export async function bootClient() {
         if (!matched) {
             matched = await matchIntent(client.commands, rest);
         }
+        // command isn't real anyway hence we say nothing
         if (!matched)
-            return; // command isn't real anyway
+            return;
         try {
-            await matched.command.messageExecute(message, matched.args);
+            const allowed = await assertCommandAccess(message.author.id, matched.command, message.channelId, (content) => message.reply(content));
+            if (allowed) {
+                const ok = await matched.command.messageExecute(message, matched.args, matched.intent);
+                settleRateLimit(matched.command, message.author.id, message.channelId, ok);
+            }
         }
         catch (err) {
             console.error(err);
@@ -86,7 +151,11 @@ export async function bootClient() {
             if (interaction.isChatInputCommand()) {
                 const command = client.commands.get(interaction.commandName);
                 if (command?.interactionExecute) {
-                    await command.interactionExecute(interaction);
+                    const allowed = await assertCommandAccess(interaction.user.id, command, interaction.channelId, (content) => interaction.reply({ content, ephemeral: true }));
+                    if (allowed) {
+                        const ok = await command.interactionExecute(interaction);
+                        settleRateLimit(command, interaction.user.id, interaction.channelId, ok);
+                    }
                 }
                 return;
             }
@@ -94,12 +163,16 @@ export async function bootClient() {
                 if (interaction.customId.startsWith(TEXT_VIEWER_PREFIX)) {
                     await handleViewerButton(interaction);
                 }
+                else if (isAnnotationListId(interaction.customId)) {
+                    await handleAnnotationListPage(interaction);
+                }
                 else if (isTextListId(interaction.customId)) {
                     await handleListPage(interaction);
                 }
                 return;
             }
-            if (interaction.isStringSelectMenu() && isTextListSelectId(interaction.customId)) {
+            if (interaction.isStringSelectMenu() &&
+                isTextListSelectId(interaction.customId)) {
                 await handleListSelect(interaction);
             }
         }
@@ -107,7 +180,10 @@ export async function bootClient() {
             console.error(err);
             if (interaction.isRepliable()) {
                 await interaction
-                    .reply({ content: "There was an error executing this command.", ephemeral: true })
+                    .reply({
+                    content: "There was an error executing this command.",
+                    ephemeral: true,
+                })
                     .catch(() => { });
             }
         }
@@ -157,7 +233,7 @@ async function matchIntent(commands, content) {
         if (!command) {
             return null;
         }
-        return { command, args: [] };
+        return { command, args: [content], intent };
     }
     catch {
         return null;

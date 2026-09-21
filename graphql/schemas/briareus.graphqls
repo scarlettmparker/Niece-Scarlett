@@ -36,9 +36,19 @@ type BlogQueries {
   blogPostTypes: [BlogPostType!]!
 }
 
+type CreateBlogPostResponse {
+  message: String!
+  post: BlogPost!
+}
+
+type CreateBlogPostTypeResponse {
+  message: String!
+  type: BlogPostType!
+}
+
 type BlogMutations {
-  createBlogPost(title: String!, input: BlogPostInput): QueryResult
-  createBlogPostType(name: String!, description: String): QueryResult
+  createBlogPost(title: String!, input: BlogPostInput): CreateBlogPostResponse!
+  createBlogPostType(name: String!, description: String): CreateBlogPostTypeResponse!
 }
 
 extend type Query {
