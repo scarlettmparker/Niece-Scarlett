@@ -12,7 +12,8 @@
     "lint:fix": "npx eslint --fix",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "graphql:generate": "graphql-codegen --config codegen.ts"
+    "graphql:generate": "graphql-codegen --config codegen.ts",
+    "schema:pull": "graphql-codegen --config codegen.ts"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@graphql-codegen/cli": "6.0.1",
     "@graphql-codegen/client-preset": "5.1.1",
+    "@graphql-codegen/schema-ast": "^5.0.2",
     "@types/node": "^24.6.2",
     "eslint": "^9.37.0",
     "jiti": "^2.6.1",
